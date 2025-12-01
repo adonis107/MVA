@@ -1,0 +1,39 @@
+\documentclass[11pt]{article}
+\usepackage{theme}
+\usepackage{shortcuts}
+% Document parameters
+% Document title
+\title{Statistical learning with Extreme Values - MVA 2025/2026
+      \\ \Large{Paper Reading Assignment}
+      \\ \Large{Sparse representation of multivariate extremes with applications to anomaly detection}}
+\author{
+Adonis Jamal \email{adonis.jamal@student-cs.fr} \\ % student 1
+FirstName LastName \email{mail@mail.com} % student 2
+}
+
+\begin{document}
+\maketitle
+\section{Introduction and contributions}
+Extreme Value Theory (EVT) provides a robust probabilistic foundation for modeling rare events and the tail behavior of distributions. While univariate EVT is well-established, multivariate EVT faces significant challenges when applied to high-dimensional data. The core difficulty lies in modeling the dependence structure of extremes, characterized by the angular (or spectral) measure, which describes how large events occur simultaneously across different features. In high dimensions, standard non-parametric estimation methods suffer from the "curse of dimensionality," as data becomes sparse and computational complexity grows.
+
+The paper "Sparse representation of multivariate extremes with applications to anomaly detection" by Goix, Sabourin, and Clémençon (2017) \cite{GOIX201712} addresses this limitation. The authors propose a novel methodology to capture the depedence structure of multivariate extremes by assuming a "sparse" structure. Instead of estimating the angular measure over the entire high-dimensional sphere, the method focuses on estimating the mass concentrated on specific on specific low-dimensional sub-cones (or faces) of the positive orthant. This approach effectively reduces the dimensionality of the problem by identifying which subsets of variables tend to be extreme simultaneously.
+
+The contributions of the paper are as follows:
+\begin{enumerate}
+  \item \textbf{Theoretical Framework:} The authors introduce a non-parametric estimator for the mass of these sub-cones using $\epsilon$-thickened rectangles. They provide a rigorous non-asymptotic study of this estimator, establishing finite-sample error bounds using Vapnik-Chervonenkis (VC) inequalities tailored to low-probability regions (Theorem 1).
+  \item \textbf{Application to Anomaly Detection:} The paper uses EVT for anomaly detection (AD) by proposing the DAMEX (Detecting Anomalies with Multivariate EXtremes) algorithm. This algorithm uses the learned sparse dependence structure to assign a "normality score" to extreme observations, significantly improving detection performance in tail regions compared to standard AD methods.
+\end{enumerate}
+
+This report focuses specifically on the algorithmic contribution (DAMEX), detailing the construction of the anomaly scoring function and illustrating its performance on benchmark datasets compared to standard approaches like Isolation Forests \cite{iForestLiu2009}. 
+
+\section{Methodology: The DAMEX Algorithm}
+
+\section{Data}
+
+\section{Results}
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}
+
