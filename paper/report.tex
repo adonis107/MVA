@@ -162,11 +162,14 @@ The following figure, generated from our synthetic dataset, illustrates this phe
     \centering
     \includegraphics[width=0.7\textwidth]{img/sparsity.png}
     \caption{Distribution of angular mass across cone dimensions for extreme simulated data. 
-    The mass is predominantly concentrated on cones of dimension $\leq 4$, confirming the sparsity (Phenomenon I) and low-dimensionality (Phenomenon II) of extremal dependence structures, in alignment with the findings reported in Goix et al. (2017).}
+    The mass is predominantly concentrated on cones of dimension $\leq 5$, confirming the sparsity (Phenomenon I) and low-dimensionality (Phenomenon II) of extremal dependence structures, in alignment with the findings reported in Goix et al. (2017).}
     \label{fig:extreme_sparsity}
 \end{figure}
 
-This empirical observation matches the results presented in the original paper (see Table 2 and Figure 5), where real-world wave data also showed concentration of extreme mass on a small number of low-dimensional cones. 
+
+
+While the non-extreme data spans all 14 dimensions, extreme values cluster in just 5 dimensions, demonstrating the dimensional sparsity characteristic of extremes.
+This empirical observation matches the results presented in the original paper, where real-world wave data also showed concentration of extreme mass on a small number of low-dimensional cones. 
 Such sparsity enables efficient and interpretable modeling of multivariate extremes, as exploited by the DAMEX algorithm for anomaly detection.
 
 \subsection{DAMEX: Clustering features \cite{jorgensen1997theory, jorgensen1987exponential, cordeiro2021introduction}}
@@ -179,8 +182,8 @@ In other words we have $n$ data and $d$ features for each data.
 A first idea to find the best cluster would be to try out all possible subset $A$ of $[1,d]$.
 
 \textbf{A meaningful cluster is one where the features are dependents.}
-To determine if a cluster of features is a good one, the features inside this cluster must behave the same for all extreme data. 
-Behaving the same for two features $i$ and $j$ can be translated as when $i$ is high $j$ is high and when $j$ is low, $i$ is low. In other word, in probability we can say that if $i$ and $j$ are independent hence the cluster $A$ having $i$ and $j$ is not a good one however if they are dependent (the behavior of one influence the behavior of the other) $A$ having $i$ and $j$ is a good cluster since with the behavior of one we can have the behavior of the other. 
+To determine if a cluster of features is a good one, the features inside this cluster must behave correlately for all extreme data (on the cone).
+Behaving the same for two features $i$ and $j$ can be translated as when $i$ is high $j$ is high and when $j$ is low, $i$ is low. In other word, we can say that if $i$ and $j$ are independent the cluster $A$ having $i$ and $j$ is not a good one however if they are dependent (the behavior of one influence the behavior of the other) $A$ having $i$ and $j$ is a good cluster since with the behavior of one we can have the behavior of the other. 
 Hence to test if a cluster is a good one we simply do a dependence test and try to maximize its deviance.
 
 \textbf{Test of dependence to find relevant cluster.}
@@ -211,7 +214,7 @@ and here the Training Deviance is computed using cross validation. The lower the
 \textbf{Hyperparametrization:}
 To get the best feature clustering we have to choose the best epsilon. If epsilon is too high we get too many subfaces (number of clusters) and we might overfit so AIC will be high (because of the numbers of subfaces). If no clusters are found (when $\varepsilon$ is extremely small), then $\text{len(Masses)} = 0$, making the AIC penalty term exactly zero. The deviance would then be computed only for the background model covering all points, but with zero complexity penalty. This explains why $AIC \approx 0$ at minimal epsilon: it essentially reduces to a null model with no subspace structure but pays no penalty for its simplicity. Hence reusing the test done by MLExtreme \cite{mlextreme2023} we can see this shape and an optimal point where the deviance is minimal considering enough points. 
 
-
+The $\texttt{rate}$ scales $\exp(-\texttt{rate} \times d)$ in the deviance. Larger $\texttt{rate}$ → only very similar subfaces matter. Smaller $\texttt{rate}$ → more tolerance to mismatches. It controls sensitivity in scoring.
 
 The figure~\ref{pseudo_deviance} of the section~\ref{sec:damex_pseudo_deviance} shows four zones, described with $\epsilon$ increasing:
 \begin{itemize}

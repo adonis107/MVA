@@ -113,24 +113,31 @@ applications to anomaly detection}
 \section{Methodology}
 \subsection{Approach}
 \begin{frame}{Geometric Approach: $\epsilon$-Thickened Rectangles}
-    How do we find these "faces" with finite data? We introduce a tolerance $\epsilon$.
-    
+    \textbf{Problem:} Real data never lies \textit{exactly} on a lower-dimensional face.
+    \vspace{0.2cm}
+
     \begin{columns}
+        % Left Column: The Definition
         \column{0.5\textwidth}
-        An observation $x$ belongs to cone $\alpha$ if:
-        \begin{enumerate}
-            \item Features in $\alpha$ are \textbf{Large} \\ ($> \epsilon ||x||_\infty$)
-            \item Features NOT in $\alpha$ are \textbf{Small} \\ ($\le \epsilon ||x||_\infty$)
-        \end{enumerate}
-        
+            \begin{block}{Defining a "Cone" (Pattern)}
+                An observation $x$ belongs to pattern $\alpha$ if:
+
+                \textbf{Active ($j \in \alpha$):} Large ($> \epsilon \|x\|_\infty$)
+
+                \textbf{Inactive ($j \notin \alpha$):} Small ($\le \epsilon \|x\|_\infty$)
+            \end{block}
+
         \column{0.5\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{img/structure_extreme_data.png} 
-        \small{Visualizing mass concentration on low-dim cones}
+            \centering
+            \includegraphics[width=\linewidth]{img/sparsity.png}
     \end{columns}
 
-    \vspace{0.5cm}
-    \textbf{The Estimator:} We count how many extreme points fall into each cone. $$ \hat{\mathcal{M}}(\alpha) = \frac{1}{k} \sum_{i=1}^n \mathbb{I} \left\{ \text{Point } i \in \text{Cone } \alpha \right\} $$
+    \vspace{0.4cm}
+
+    \textbf{The Estimator:} We count how many extreme points match this pattern.
+    $$ \hat{\mathcal{M}}(\alpha) = \frac{1}{k} \sum_{i=1}^n \mathbb{I} \left\{ \text{Point } i \in \text{Cone } \alpha \cap \{R_i>n/k\} \right\} $$
+    
+    \small{\textit{Note: We apply a threshold to remove cones with negligible mass (noise).}}
 \end{frame}
 
 % -------------------------------------------------------------------
@@ -139,11 +146,11 @@ applications to anomaly detection}
 \subsection{Scoring Anomalies}
 \begin{frame}{DAMEX: Detecting Anomaly with Multivariate EXtremes}
     \begin{enumerate}
-        \item \textbf{Standardize:} Transform data to Pareto scale (Rank transform).
+        \item \textbf{Standardize:} Transform data to Pareto scale $$S_j(x) = \#\{X_i^j>x, i \leq n\}/n \quad V_i^j = 1/S_j(X_i^j)$$
         \item \textbf{Learn:} Estimate the mass $\hat{\mathcal{M}}(\alpha)$ for every cone (The "Normal" Profile).
         \item \textbf{Score:} For a new extreme point $x$:
     \end{enumerate}
-
+    \vspace{-0.2cm}
     \begin{block}{The Anomaly Score}
         $$ s_n(x) \propto \frac{\text{Mass of the Cone containing } x}{\text{Magnitude of } x} $$
     \end{block}
@@ -157,10 +164,38 @@ applications to anomaly detection}
 \end{frame}
 
 % -------------------------------------------------------------------
+% SLIDE 7: Feature Clustering Methodology
+% -------------------------------------------------------------------
+\section{Results}
+\subsection{Feature Clustering}
+\begin{frame}{Feature Clustering Methodology}
+    
+\textbf{Goal:} Find features with similar behavior on extreme data.
+\vspace{0.2cm}
+\begin{columns}
+    \column{0.6\textwidth}
+    \textbf{Dependence test} (cluster $A = \{i, j, k\}$, extreme data only):
+    \[H_0: P(\text{Ex}) = \prod P(\text{Ex}_i)\]
+    \[H_1: P(\text{Ex}) > \prod P(\text{Ex}_i)\]
+
+    \textbf{Optimization:} Use DAMEX cones, minimize:\\$\text{AIC} = \text{Training Deviance} + 2 \times \frac{\# \text{subfaces}}{n_{\text{extremes}}}$
+
+    \column{0.4\textwidth}
+    \centering
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{img/AIC_eps.png}
+        \caption{AIC vs $\epsilon$: 1) Null model, 2) Optimal, 3) Overfit, 4) Double descent}
+        \label{pseudo_deviance}
+    \end{figure}
+\end{columns}
+\end{frame}
+
+% -------------------------------------------------------------------
 % SLIDE 6: Results (The Case Study)
 % -------------------------------------------------------------------
-\section{Experimental Results}
-\begin{frame}{Results: The Structure of Crypto Crashes}
+\subsection{Crypto Crash Structure}
+\begin{frame}{The Structure of Crypto Crashes}
     We applied DAMEX to daily returns (2020-2024). 
     \textbf{What "Normal" extremes did it find?}
 
@@ -204,10 +239,6 @@ applications to anomaly detection}
     \begin{itemize}
         \item Selecting $\epsilon$ and $k$ is hard. We implemented an AIC criterion (see report) to automate this.
     \end{itemize}
-
-    \vspace{0.5cm}
-    \centering
-    \LARGE{Questions?}
 \end{frame}
 
 % ==============================================================================
