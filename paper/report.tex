@@ -2,18 +2,15 @@
 \usepackage{theme}
 \usepackage{shortcuts}
 
-
-
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage[margin=1in]{geometry}
-\usepackage{natbib}
+\usepackage[numbers]{natbib}
+\usepackage{float}
 
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
-\usepackage{amsmath}
 
 % Document parameters
 % Document title
@@ -163,7 +160,7 @@ The following figure, generated from our synthetic dataset, illustrates this phe
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{img/structure_extreme_data.png}
+    \includegraphics[width=0.7\textwidth]{img/sparsity.png}
     \caption{Distribution of angular mass across cone dimensions for extreme simulated data. 
     The mass is predominantly concentrated on cones of dimension $\leq 4$, confirming the sparsity (Phenomenon I) and low-dimensionality (Phenomenon II) of extremal dependence structures, in alignment with the findings reported in Goix et al. (2017).}
     \label{fig:extreme_sparsity}
@@ -172,7 +169,7 @@ The following figure, generated from our synthetic dataset, illustrates this phe
 This empirical observation matches the results presented in the original paper (see Table 2 and Figure 5), where real-world wave data also showed concentration of extreme mass on a small number of low-dimensional cones. 
 Such sparsity enables efficient and interpretable modeling of multivariate extremes, as exploited by the DAMEX algorithm for anomaly detection.
 
-\subsection{DAMEX: Clustering features \citep{jorgensen1997theory, jorgensen1987exponential, cordeiro2021introduction}}
+\subsection{DAMEX: Clustering features \cite{jorgensen1997theory, jorgensen1987exponential, cordeiro2021introduction}}
 
 \textbf{Goal:} Find the features that behave the same on the extreme data (data reduction on the extreme values).
 
@@ -197,24 +194,92 @@ $H_1$: $P(k \text{ extreme\_data}, i \text{ extreme and } j \text{ extreme}) > P
 \text{DevianceTest}(A) = -2 \times \log\left[ \frac{\text{Likelihood}(\text{Data\_extreme}_{[A]} \mid H_0)}{\text{Likelihood}(\text{Data\_extreme}_{[A]} \mid H_1)} \right]
 \]
 
-where $\text{Data\_extreme}_{[A]}$ is the initial dataset where we consider only the extreme data from this dataset and only the features $i \in A$ for this dataset.
+where $\text{Data\_extreme}_{[A]}$ is the initial dataset where we consider only the extreme data from this dataset and only the features $i \in A$ for this dataset. Hence a high deviance means $\text{Likelihood}(\text{Data\_extreme}_{[A]} \mid H_0) \ll \text{Likelihood}(\text{Data\_extreme}_{[A]} \mid H_1)$ so we get $H_0$ rejected and so the $k$, $i$ and $j$ are dependent, so the cluster is meaningful.
+So the dumb approach would be to test all of these subsets and keep only the best clusters $A$. However testing all of these subsets will be computationally costly that's why we use different approach.
+We can use CLEF which uses a hierarchical tree method (we will not detail this method here). We can also use DAMEX to preselect our $A$. Instead of testing all subset $A$ of $[1, d]$, we will focus only on the cones, outputs of the DAMEX algorithm. The DAMEX method for clustering is presented in Algorithm~\ref{damex_algorithm} of the section~\ref{sec:damex_algorithm}. To find the best cluster, we use the AIC metric and try to minimize it:
 
-Hence a high deviance means $\text{Likelihood}(\text{Data\_extreme}_{[A]} \mid H_0) \ll \text{Likelihood}(\text{Data\_extreme}_{[A]} \mid H_1)$ so we get $H_0$ rejected and so the $k$, $i$ and $j$ are dependent, so the cluster is meaningful.
+\[
+\text{AIC} = \text{Training Deviance} + 2 \times \frac{\# \text{subfaces}}{n_{\text{extremes}}}
+\]
+where 
+\[
+\text{Deviance} = \frac{-2}{n_{\text{extremes}}} \times \sum_i \log\left( \sum_j p_j \exp\left(-\text{rate} \times d(X_i, \text{subface}_j)\right) \right)
+\]
 
-So the dumb approach would be to test all of these subsets and keep only the best clusters $A$.
+and here the Training Deviance is computed using cross validation. The lower the training deviance is the better the clustering is since each cluster is close to its subface. Hence minimizing the AIC allows us to find the best compromise between minimizing the variance and don't overparametrize (too many subfaces).
 
-However testing all of these subsets will be computationally costly that's why we use different approach.
+\textbf{Hyperparametrization:}
+To get the best feature clustering we have to choose the best epsilon. If epsilon is too high we get too many subfaces (number of clusters) and we might overfit so AIC will be high (because of the numbers of subfaces). If no clusters are found (when $\varepsilon$ is extremely small), then $\text{len(Masses)} = 0$, making the AIC penalty term exactly zero. The deviance would then be computed only for the background model covering all points, but with zero complexity penalty. This explains why $AIC \approx 0$ at minimal epsilon: it essentially reduces to a null model with no subspace structure but pays no penalty for its simplicity. Hence reusing the test done by MLExtreme \cite{mlextreme2023} we can see this shape and an optimal point where the deviance is minimal considering enough points. 
 
-We can use CLEF which uses a hierarchical tree method (we will not detail this method here)
 
-We can also use DAMEX to preselect our $A$.
 
-Instead of testing all subset $A$ of $[1, d]$, we will focus only on the cones, outputs of the DAMEX algorithm. 
+The figure~\ref{pseudo_deviance} of the section~\ref{sec:damex_pseudo_deviance} shows four zones, described with $\epsilon$ increasing:
+\begin{itemize}
+    \item \textbf{Zone 1:} $\epsilon$ is tiny, very few clusters are recognized. Most data points are not assigned to any cluster, leading to near-zero deviance (only perfectly aligned points contribute) and $\#\text{subfaces} \approx 0$. The AIC penalty term $2 \cdot \#\text{subfaces}/\text{number\_extremes}$ becomes negligible, giving $AIC \approx 0$.
+    
+    \item \textbf{Zone 2:} AIC decreases. The initial peak in AIC occurs when the first non-optimal clusters appear, increasing both deviance and the penalty term. As $\epsilon$ increases, more meaningful clusters are discovered, improving data coverage and reducing deviance faster than the complexity penalty increases.
+    
+    \item \textbf{Zone 3:} AIC increases. The number of subfaces grows excessively, leading to overfitting. While deviance continues to decrease slightly, the complexity penalty dominates, indicating the model is becoming too specific to the training data.
+    
+    \item \textbf{Zone 4:} AIC decreases again, demonstrating double descent. With very large $\epsilon$, subfaces become fewer but larger (higher-dimensional), effectively merging into simpler structures. The complexity penalty drops sharply as redundant subfaces collapse, outweighing the slight increase in deviance from less precise modeling.
+\end{itemize}
 
-So the DAMEX method for clustering is as follow:
+\textbf{Possible improvements:} Consider another AIC which penalizes better the uncovered data without impacting too much the global AIC. 
 
+
+
+\subsection{Analysis of Crypto-Crashes}
+We applied the DAMEX algorithm (via \texttt{MLExtreme}) to the cryptocurrency returns. The algorithm revealed a highly interpretable dependence structure during market crashes.
+
+\textbf{1. Systemic Risk Identification:}
+The algorithm identified a dominant 5-dimensional cone containing cryptocurrencies \texttt{\{BTC, ETH, BNB, SOL, XRP\}}.
+\begin{itemize}
+    \item \textbf{Observation:} This cone carries the highest probability mass ($\approx 1.0$ in our un-normalized mass output).
+    \item \textbf{Interpretation:} This indicates a "Full Dependence" structure among volatile assets. When a major crash occurs, it is rarely isolated; if Bitcoin crashes, the entire altcoin market tends to follow immediately. This confirms that the "diversification" benefit among these assets during extreme events is negligible.
+\end{itemize}
+
+\textbf{2. The Stablecoin Decoupling:}
+The algorithm identified a distinct, lower-dimensional cone dominated by \texttt{USDT} (Tether).
+\begin{itemize}
+    \item \textbf{Observation:} \texttt{USDT} extremes often appear in a cone separate from the speculative assets (Mass $\approx 0.73$).
+    \item \textbf{Interpretation:} This captures "de-pegging" events or isolated volatility in stablecoins that do not perfectly correlate with the broader market crash. This separation is critical for anomaly detection: a crash in \texttt{USDT} is structurally different from a crash in \texttt{ETH}.
+\end{itemize}
+
+\textbf{3. Dimensionality Analysis:}
+Table~\ref{tab:crypto_results} summarizes the mass distribution. We observe "Phenomenon II" (low dimensionality) only partially: while specific subsets exist (e.g., \texttt{SOL + USDT}), the dominance of the full-dimensional cone suggests that the crypto market is highly integrated, unlike the wave data presented in the original paper where physical constraints enforce sparsity.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{llc}
+        \toprule
+        \textbf{Dimension} & \textbf{Cone (Assets)} & \textbf{Relative Mass} \\
+        \midrule
+        5 (Cryptocurrencies) & BTC + ETH + BNB + SOL + XRP & 1.0007 \\
+        1 & USDT & 0.7278 \\
+        6 (Full) & BTC + ETH + BNB + SOL + XRP + USDT & 0.6368 \\
+        4 & BNB + BTC + ETH + XRP & 0.3639 \\
+        2 & SOL + USDT & 0.1819 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Dominant dependence cones identified by DAMEX in the Crypto dataset. The market exhibits a split structure: a highly dependent speculative block and a decoupled stablecoin component.}
+    \label{tab:crypto_results}
+\end{table}
+
+
+\section{Conclusion and Discussion}
+The paper successfully demonstrates that incorporating multivariate Extreme Value Theory into anomaly detection yields significant improvements for tail events. By explicitly modeling the sparse dependence structure of extremes using $\epsilon$-thickened cones, DAMEX overcomes the curse of dimensionality that plagues standard kernel-based or nearest-neighbor methods in high-dimensional spaces.
+
+However, the method relies on sensitive hyperparameters, specifically the threshold $k$ (bias-variance trade-off) and the tolerance $\epsilon$. While the theoretical bounds provided in the paper offer a framework for understanding these trade-offs, practical selection remains heuristic. Future work could focus on adaptive selection of $\epsilon$ or supervised optimization of these parameters when labels are available.
+
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+
+\newpage
+\appendix
+\section{Appendix: DAMEX Algorithm}\label{sec:damex_algorithm}
 \begin{algorithm}
 \caption{DAMEX $\epsilon$ Selection Pipeline (Visual Sketch)}
+\label{damex_algorithm}
 \begin{algorithmic}[1]
 \Procedure{SelectBestEpsilon}{}
     \State $\mathcal{E} \gets \{\epsilon_1, \epsilon_2, \dots, \epsilon_m\}$
@@ -244,104 +309,13 @@ So the DAMEX method for clustering is as follow:
 \end{algorithmic}
 \end{algorithm}
 
-To find the best cluster we use the AIC metric and try to minimize it:
 
-\[
-\text{AIC} = \text{Training Deviance} + 2 \times \frac{\# \text{subfaces}}{n_{\text{extremes}}}
-\]
-
-where 
-
-\[
-\text{Deviance} = \frac{-2}{n_{\text{extremes}}} \times \sum_i \log\left( \sum_j p_j \exp\left(-\text{rate} \times d(X_i, \text{subface}_j)\right) \right)
-\]
-
-and here the Training Deviance is computed using cross validation.
-
-The lower the training deviance is the better the clustering is since each cluster is close to its subface.
-
-Hence minimizing the AIC allows us to find the best compromise between minimizing the variance and don't overparametrize (too many subfaces).
-
-\textbf{Hyperparametrization:}
-To get the best feature clustering we have to choose the best epsilon.
-
-If epsilon is too high we get too many subfaces (number of clusters) and we might overfit so AIC will be high (because of the numbers of subfaces)
-
-If no clusters are found (when $\varepsilon$ is extremely small), then $\text{len(Masses)} = 0$, making the AIC penalty term exactly zero. The deviance would then be computed only for the background model covering all points, but with zero complexity penalty. This explains why $AIC \approx 0$ at minimal epsilon: it essentially reduces to a null model with no subspace structure but pays no penalty for its simplicity.
-
-Hence reusing the test done by MLExtreme \citet{mlextreme2023} we can see this shape and an optimal point where the deviance is minimal considering enough points. 
-
+\section{Appendix: DAMEX clustering pseudo-deviance}\label{sec:damex_pseudo_deviance}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{img/AIC_eps.png}
     \caption{Relationship between epsilon and AIC/deviance metrics}
+    \label{pseudo_deviance}
 \end{figure}
-
-We observe four zones, described with $\epsilon$ increasing:
-\begin{itemize}
-    \item \textbf{Zone 1:} $\epsilon$ is tiny, very few clusters are recognized. Most data points are not assigned to any cluster, leading to near-zero deviance (only perfectly aligned points contribute) and $\#\text{subfaces} \approx 0$. The AIC penalty term $2 \cdot \#\text{subfaces}/\text{number\_extremes}$ becomes negligible, giving $AIC \approx 0$.
-    
-    \item \textbf{Zone 2:} AIC decreases. The initial peak in AIC occurs when the first non-optimal clusters appear, increasing both deviance and the penalty term. As $\epsilon$ increases, more meaningful clusters are discovered, improving data coverage and reducing deviance faster than the complexity penalty increases.
-    
-    \item \textbf{Zone 3:} AIC increases. The number of subfaces grows excessively, leading to overfitting. While deviance continues to decrease slightly, the complexity penalty dominates, indicating the model is becoming too specific to the training data.
-    
-    \item \textbf{Zone 4:} AIC decreases again, demonstrating double descent. With very large $\epsilon$, subfaces become fewer but larger (higher-dimensional), effectively merging into simpler structures. The complexity penalty drops sharply as redundant subfaces collapse, outweighing the slight increase in deviance from less precise modeling.
-\end{itemize}
-
-\textbf{Possible improvements:} Consider another AIC which penalizes better the uncovered data without impacting too much the global AIC. 
-
-
-
-
-
-
-
-
-
-\subsection{Analysis of Crypto-Crashes}
-We applied the DAMEX algorithm (via \texttt{MLExtreme}) to the cryptocurrency returns. The algorithm revealed a highly interpretable dependence structure during market crashes.
-
-\textbf{1. Systemic Risk Identification:}
-The algorithm identified a dominant 5-dimensional cone containing cryptocurrencies \texttt{\{BTC, ETH, BNB, SOL, XRP\}}.
-\begin{itemize}
-    \item \textbf{Observation:} This cone carries the highest probability mass ($\approx 1.0$ in our un-normalized mass output).
-    \item \textbf{Interpretation:} This indicates a "Full Dependence" structure among volatile assets. When a major crash occurs, it is rarely isolated; if Bitcoin crashes, the entire altcoin market tends to follow immediately. This confirms that the "diversification" benefit among these assets during extreme events is negligible.
-\end{itemize}
-
-\textbf{2. The Stablecoin Decoupling:}
-The algorithm identified a distinct, lower-dimensional cone dominated by \texttt{USDT} (Tether).
-\begin{itemize}
-    \item \textbf{Observation:} \texttt{USDT} extremes often appear in a cone separate from the speculative assets (Mass $\approx 0.73$).
-    \item \textbf{Interpretation:} This captures "de-pegging" events or isolated volatility in stablecoins that do not perfectly correlate with the broader market crash. This separation is critical for anomaly detection: a crash in \texttt{USDT} is structurally different from a crash in \texttt{ETH}.
-\end{itemize}
-
-\textbf{3. Dimensionality Analysis:}
-Table \ref{tab:crypto_results} summarizes the mass distribution. We observe "Phenomenon II" (low dimensionality) only partially: while specific subsets exist (e.g., \texttt{SOL + USDT}), the dominance of the full-dimensional cone suggests that the crypto market is highly integrated, unlike the wave data presented in the original paper where physical constraints enforce sparsity.
-
-\begin{table}[h]
-    \centering
-    \begin{tabular}{llc}
-        \toprule
-        \textbf{Dimension} & \textbf{Cone (Assets)} & \textbf{Relative Mass} \\
-        \midrule
-        5 (Cryptocurrencies) & BTC + ETH + BNB + SOL + XRP & 1.0007 \\
-        1 & USDT & 0.7278 \\
-        6 (Full) & BTC + ETH + BNB + SOL + XRP + USDT & 0.6368 \\
-        4 & BNB + BTC + ETH + XRP & 0.3639 \\
-        2 & SOL + USDT & 0.1819 \\
-        \bottomrule
-    \end{tabular}
-    \caption{Dominant dependence cones identified by DAMEX in the Crypto dataset. The market exhibits a split structure: a highly dependent speculative block and a decoupled stablecoin component.}
-    \label{tab:crypto_results}
-\end{table}
-
-
-\section{Conclusion and Discussion}
-The paper successfully demonstrates that incorporating multivariate Extreme Value Theory into anomaly detection yields significant improvements for tail events. By explicitly modeling the sparse dependence structure of extremes using $\epsilon$-thickened cones, DAMEX overcomes the curse of dimensionality that plagues standard kernel-based or nearest-neighbor methods in high-dimensional spaces.
-
-However, the method relies on sensitive hyperparameters, specifically the threshold $k$ (bias-variance trade-off) and the tolerance $\epsilon$. While the theoretical bounds provided in the paper offer a framework for understanding these trade-offs, practical selection remains heuristic. Future work could focus on adaptive selection of $\epsilon$ or supervised optimization of these parameters when labels are available.
-
-\bibliographystyle{plain}
-\bibliography{bibliography}
 
 \end{document}
