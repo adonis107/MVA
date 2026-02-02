@@ -4,10 +4,11 @@
 */data/
 TP1/output/ 
 TP1/USPS/
-TP2/TP2_images/
+TP2/data/TP2_images/
 TP3/processed/
 TP3/raw/
 
 */try_*
+*copy*
 .DS_Store
 */.DS_Store
