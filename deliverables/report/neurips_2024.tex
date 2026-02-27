@@ -38,7 +38,7 @@
 
 
 \begin{abstract}
-  This paper provides a detailed study of the paper "The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo" by Matthew D. Hoffman and Andrew Gelman \cite{main}. The paper introduces the No-U-Turn Sampler, an extension of Hamiltonian Monte Carlo that adaptively determines the path length during sampling, eliminating the need for manual tuning of this parameter. We further extend this analysis by providing a critical evaluation of the strengths and weaknesses of NUTS and discussing TODO \todo{a remplir}. The full code related to this report is available at \url{https://github.com/adonis107/MVA-BML}.
+  This paper analyzes Hoffman and Gelman's "The No-U-Turn Sampler" \cite{main}, an extension of Hamiltonian Monte Carlo that eliminates manual path-length tuning by adaptively setting it during sampling. We critically evaluate the strengths, weaknesses, and practical limitations of NUTS using our own implementation. Code is available at \url{https://github.com/adonis107/MVA-BML}.
 \end{abstract}
 
 
@@ -50,7 +50,7 @@ The context of this work is rooted in the broader field of Bayesian computation.
 
 The NUTS algorithm eliminates the need to specify the number of leapfrog steps by dynamically building a set of candidate states along the Hamiltonian trajectory and stopping automatically when the simulated path begins to double back on itself, hence the name "No-U-Turn". In addition, the authors introduce a primal–dual averaging scheme to adapt the step size during a warm-up phase. Together, these innovations yield a nearly tuning-free algorithm that preserves the theoretical strengths of HMC while dramatically improving usability.
 
-In this report, we first examine the theoretical, computational, and empirical methods developed in the paper, detailing how NUTS modifies and extends standard HMC. We then critically assess the strengths and limitations of the approach, both from a theoretical and practical perspective. Finally, we TODO\todo{a remplir}.
+In this report, we first examine the theoretical, computational, and empirical methods developed in the paper, detailing how NUTS modifies and extends standard HMC. We then critically assess the strengths and limitations of the approach, both from a theoretical and practical perspective thanks to our own implementation. 
 
 \section{The No-U-Turn Sampler: Methodology and Analysis}
 
