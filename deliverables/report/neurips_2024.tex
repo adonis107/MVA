@@ -38,7 +38,7 @@
 
 
 \begin{abstract}
-  This paper provides a detailed study of the paper "The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo" by Matthew D. Hoffman and Andrew Gelman \cite{main}. The paper introduces the No-U-Turn Sampler, an extension of Hamiltonian Monte Carlo that adaptively determines the path length during sampling, eliminating the need for manual tuning of this parameter. We further extend this analysis by providing a critical evaluation of the strengths and weaknesses of NUTS and discussing TODO \todo{a remplir}. The full code related to this report is available at \url{https://github.com/adonis107/MVA-BML}.
+  This paper analyzes Hoffman and Gelman's article, "The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo" \cite{main}, an extension of Hamiltonian Monte Carlo that eliminates manual path-length tuning by adaptively setting it during sampling. We critically evaluate the strengths, weaknesses, and practical limitations of NUTS using our own implementation. Code is available at \url{https://github.com/adonis107/MVA-BML}.
 \end{abstract}
 
 
@@ -50,7 +50,7 @@ The context of this work is rooted in the broader field of Bayesian computation.
 
 The NUTS algorithm eliminates the need to specify the number of leapfrog steps by dynamically building a set of candidate states along the Hamiltonian trajectory and stopping automatically when the simulated path begins to double back on itself, hence the name "No-U-Turn". In addition, the authors introduce a primal–dual averaging scheme to adapt the step size during a warm-up phase. Together, these innovations yield a nearly tuning-free algorithm that preserves the theoretical strengths of HMC while dramatically improving usability.
 
-In this report, we first examine the theoretical, computational, and empirical methods developed in the paper, detailing how NUTS modifies and extends standard HMC. We then critically assess the strengths and limitations of the approach, both from a theoretical and practical perspective. Finally, we TODO\todo{a remplir}.
+In this report, we first examine the theoretical, computational, and empirical methods developed in the paper, detailing how NUTS modifies and extends standard HMC. We then critically assess the strengths and limitations of the approach, both from a theoretical and practical perspective thanks to our own implementation. 
 
 \section{The No-U-Turn Sampler: Methodology and Analysis}
 
@@ -81,15 +81,6 @@ x_{t+1} = \mu - \frac{\sqrt{t}}{\gamma(t + t_0)} \sum_{i=1}^{t} H_i, \qquad \bar
 \]
 where $x = \log\epsilon$, $H_t$ is a custom statistic that describes the behavior of an MCMC algorithm at iteration $t \geq 1$ (possibly a function of the acceptance rate of the Metropolis step), $\mu = \log(10\epsilon_0)$ encourages testing larger values of $\epsilon$, and $\gamma$, $t_0$, $\kappa$ are fixed hyperparameters set to $0.05$, $10$, and $0.75$ throughout. This scheme renders NUTS entirely tuning-free.
 
-\subsection{Empirical Evaluation}
-
-The authors evaluate NUTS and HMC on four targets: a 250-dimensional multivariate normal, the posterior of a Bayesian logistic regression (25 parameters) and its hierarchical extension (302 parameters) both fitted to the German credit data set, and a 3001-dimensional stochastic volatility model fitted to S\&P~500 returns. Performance is measured as effective sample size (ESS) per gradient evaluation, with the minimum ESS across dimensions reported. HMC is tested across a grid of simulation lengths and target acceptance rates, while NUTS is tested across values of $\delta$ only, for a total of over 3800 experiments.
-
-The dual averaging scheme reliably matches the realised acceptance statistic to its target $\delta$ and $\bar{\epsilon}$ converges within a few hundred warm-up iterations on most models. NUTS trajectory lengths concentrate on integer powers of two, confirming that the U-turn criterion is typically triggered only after a complete doubling. In terms of ESS per gradient, NUTS matches or exceeds the best tuned HMC across all four distributions, outperforming it by roughly a factor of two on the multivariate normal and 1.5 on the stochastic volatility model, without requiring any tuning of the trajectory length.
-
-\section{Critical Evaluation}
-
-\section{Our Implementation and Extensions}
 
 \subsection{Theoretical Complements}
 
@@ -148,7 +139,27 @@ Distributing the factors into the minimum functions gives:
 \end{equation*}
 Since both sides are trivially equal, detailed balance holds, proving that the memory-efficient transition kernel preserves the target uniform distribution over $\mathcal{C}$. \todo{a voir si on garde}
 
+\subsection{Empirical Evaluation}
+
+The authors evaluate NUTS and HMC on four targets: a 250-dimensional multivariate normal, the posterior of a Bayesian logistic regression (25 parameters) and its hierarchical extension (302 parameters) both fitted to the German credit data set, and a 3001-dimensional stochastic volatility model fitted to S\&P~500 returns. Performance is measured as effective sample size (ESS) per gradient evaluation, with the minimum ESS across dimensions reported. HMC is tested across a grid of simulation lengths and target acceptance rates, while NUTS is tested across values of $\delta$ only, for a total of over 3800 experiments.
+
+The dual averaging scheme reliably matches the realised acceptance statistic to its target $\delta$ and $\bar{\epsilon}$ converges within a few hundred warm-up iterations on most models. NUTS trajectory lengths concentrate on integer powers of two, confirming that the U-turn criterion is typically triggered only after a complete doubling. In terms of ESS per gradient, NUTS matches or exceeds the best tuned HMC across all four distributions, outperforming it by roughly a factor of two on the multivariate normal and 1.5 on the stochastic volatility model, without requiring any tuning of the trajectory length.
+
+\section{Critical Evaluation and Limitations}
+
+\subsection{Strengths and Weaknesses of the Article}
+
+As explained, the major strength of the article is that it resolves a central practical limitation of HMC, the manual tuning of the trajectory length through a conceptually simple yet theoretically rigorous construction. The No-U-Turn criterion and recursive doubling scheme are carefully designed to preserve detailed balance, and the integration of slice sampling ensures exactness despite adaptive stopping. The addition of dual averaging for step-size adaptation makes the method essentially tuning-free, greatly improving usability. 
+
+However, some limitations remain. The dual-averaging scheme introduces hyperparameters whose default values are justified empirically rather than theoretically, and performance guarantees are mainly asymptotic, with limited insight into convergence rates. The tree-building procedure adds computational overhead and may waste gradient evaluations when trajectories are long. Finally, although the experiments are extensive, they cover only a limited range of models, leaving the behavior of NUTS on more pathological or highly multimodal targets less explored as we will see here.
+
+\subsection{Practical Limitations}\todo{a voir si on garde les sous titres ca prends de la place}
+
+\section{Our Implementation and Extensions}
+
 \section{Conclusion}
+
+\newpage
 
 {\footnotesize
 \bibliographystyle{unsrtnat}
