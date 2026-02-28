@@ -22,3 +22,6 @@ output/
 *.pyc
 __pycache__/
 *.egg-info/
+
+# Files
+files/
