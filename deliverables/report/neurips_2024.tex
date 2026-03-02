@@ -15,7 +15,7 @@
 \usepackage{xcolor}         % colors
 
 \usepackage{amsmath, amssymb}
-\usepackage{todonotes}
+\usepackage{todonotes} 
 
 \title{Article Review: The No-U-Turn Sampler}
 
@@ -73,9 +73,9 @@ States added during a halting iteration are excluded from $\mathcal{C}$ to prese
 \[
 x_{t+1} = \mu - \frac{\sqrt{t}}{\gamma(t + t_0)} \sum_{i=1}^{t} H_i, \qquad \bar{x}_{t+1} = t^{-\kappa} x_{t+1} + (1 - t^{-\kappa}) \bar{x}_t,
 \]
-where $x = \log\epsilon$, $H_t$ is a custom statistic that describes the behavior of an MCMC algorithm at iteration $t \geq 1$ (possibly a function of the acceptance rate of the Metropolis step), $\mu = \log(10\epsilon_0)$ encourages testing larger values of $\epsilon$, and $\gamma$, $t_0$, $\kappa$ are fixed hyperparameters set to $0.05$, $10$, and $0.75$ throughout. This scheme renders NUTS entirely tuning-free.
+where $x = \log\epsilon$, $H_t$ is a custom statistic that describes the behavior of an MCMC algorithm at iteration $t \geq 1$ (possibly a function of the acceptance rate of the Metropolis step), $\mu = \log(10\epsilon_0)$ encourages testing larger values of $\epsilon$, and $\gamma$, $t_0$, $\kappa$ are fixed hyperparameters set to $0.05$, $10$, and $0.75$ throughout. This scheme renders NUTS entirely tuning-free. 
 
-Some components are only briefly sketched in the original paper, so we provide more detailed derivations here. We focus on the two key theoretical ingredients ensuring correctness of NUTS: the uniform distribution over the candidate set $\mathcal{C}$ and the memory-efficient transition kernel.
+\hspace*{0.53cm} Some components are only briefly sketched in the original paper, so we provide more detailed derivations here. We focus on the two key theoretical ingredients ensuring correctness of NUTS: the uniform distribution over the candidate set $\mathcal{C}$ and the memory-efficient transition kernel.
 
 \paragraph{Rigorous Proof of Uniform Distribution over the Candidate Set.} In the original paper, the uniformity of the conditional distribution over the candidate set $\mathcal{C}$ (Equation (2) in the paper) is derived very concisely from conditions C.1 to C.4. The argument is compressed into a few proportionality statements. We restate it more explicitly.
 
