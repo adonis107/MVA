@@ -144,7 +144,14 @@ We apply GP classification with an RBF kernel ($\ell=1$, $\sigma_f^2=1$) to 150 
 \noindent\textit{(iii) Neal's Funnel.}
 Neal's funnel \cite{neal2003slice} is a canonical pathological target: $v\sim\mathcal{N}(0,9)$, $x_i\mid v\sim\mathcal{N}(0,e^v)$ for $i=1,\dots,9$. As $v\to-\infty$, the conditional variance $e^v\to0$ creates a microscopic neck demanding tiny steps, while the wide top ($v>0$) requires large steps. HMC's fixed step size cannot handle both regimes. Figure~\ref{fig:funnel_scatter} shows that NUTS covers the full funnel including negative $v$, closely matching the ground truth, whereas HMC is confined to $v\in[0,4]$ and completely misses the funnel neck. The trace plots (Figure~\ref{fig:funnel_traces}) confirm that NUTS transitions freely between both regimes while HMC gets stuck with long flat segments indicating rejected proposals. Quantitatively, NUTS recovers $\text{Var}(v)\approx 9$ (the true value), while HMC severely underestimates it.
 
-\begin{figure}[ht]
+\paragraph{Summary.}
+Across all three stress tests, NUTS consistently outperforms HMC without trajectory-length tuning. The gains are most dramatic when the posterior geometry varies spatially (Neal's funnel) or features many equivalent modes (BNN), precisely the scenarios unexplored in the original paper, confirming that NUTS's adaptive mechanism is essential for complex posteriors. The full code and results for these experiments are available in our GitHub repository.
+
+\section{Conclusion}
+
+This review confirms that NUTS constitutes a significant advance in practical Bayesian computation. Our independent implementation validates the original results: NUTS matches or exceeds the best-tuned HMC on all four benchmarks while eliminating trajectory-length tuning. More importantly, our stress tests on a multimodal BNN, a densely correlated GP classifier, and Neal's funnel demonstrate that the adaptive trajectory length is critical on posteriors with complex geometries. HMC fails catastrophically on the funnel and stagnates in the multimodal landscape, whereas NUTS handles both seamlessly, confirming its suitability as a general-purpose inference engine for modern Bayesian models.
+
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{Funnel/funnel_scatter.png}
     \vspace{-0.3cm}
@@ -152,20 +159,13 @@ Neal's funnel \cite{neal2003slice} is a canonical pathological target: $v\sim\ma
     \label{fig:funnel_scatter}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.7\textwidth]{Funnel/trace_plots.png}
     \vspace{-0.3cm}
     \caption{Trace plots on Neal's Funnel. NUTS (left, blue) transitions freely across the full $v$ range with good mixing in all $x_i$. HMC (right, red) gets trapped with flat segments and $x_i$ degenerating to near-zero.}
     \label{fig:funnel_traces}
-\end{figure}
-
-\paragraph{Summary.}
-Across all three stress tests, NUTS consistently outperforms HMC without trajectory-length tuning. The gains are most dramatic when the posterior geometry varies spatially (Neal's funnel) or features many equivalent modes (BNN), precisely the scenarios unexplored in the original paper, confirming that NUTS's adaptive mechanism is essential for complex posteriors. The full code and results for these experiments are available in our GitHub repository.
-
-\section{Conclusion}
-
-This review confirms that NUTS constitutes a significant advance in practical Bayesian computation. Our independent implementation validates the original results: NUTS matches or exceeds the best-tuned HMC on all four benchmarks while eliminating trajectory-length tuning. More importantly, our stress tests on a multimodal BNN, a densely correlated GP classifier, and Neal's funnel demonstrate that the adaptive trajectory length is critical on posteriors with complex geometries. HMC fails catastrophically on the funnel and stagnates in the multimodal landscape, whereas NUTS handles both seamlessly, confirming its suitability as a general-purpose inference engine for modern Bayesian models.
+\end{figure} 
 
 {\tiny
 \setlength{\bibsep}{1pt}   
