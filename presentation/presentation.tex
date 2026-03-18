@@ -647,7 +647,7 @@
   \small
   \vspace{-0.2cm}
   \begin{center}
-    \includegraphics[width=0.62\textwidth]{Noise_Full_Aperture.png}
+    \includegraphics[width=0.62\textwidth]{Noise_Full_Aperture_short.png}
   \end{center}
 
   \vspace{-0.2cm}
@@ -660,7 +660,7 @@
   \small
   \vspace{-0.2cm}
   \begin{center}
-    \includegraphics[width=0.8\textwidth]{Noise_Partial_Aperture.png}
+    \includegraphics[width=0.8\textwidth]{Noise_Partial_Aperture_short.png}
   \end{center}
 
   \vspace{-0.2cm} 
@@ -682,7 +682,7 @@
   \small
   \vspace{-0.2cm}
   \begin{center}
-    \includegraphics[width=0.82\textwidth]{Noise_Time_Dependent.png}
+    \includegraphics[width=0.82\textwidth]{Noise_Time_Dependent_short.png}
   \end{center}
 
   \vspace{-0.2cm}
@@ -734,7 +734,7 @@
       \item \textbf{Full aperture:} RT and KM agree closely; both approach theoretical $J_0^2$ spot as $R_0,N\!\to\!\infty$.
       \item \textbf{Partial aperture:} linear geometry $\Rightarrow$ mirror artifact in range; cross-range resolution $r_c\!=\!\lambda|x_{\mathrm{ref}}|/R_0$. MUSIC provides sharper image.
       \item \textbf{Broadband:} increased bandwidth drastically improves range resolution ($r_l \!\propto\! 1/B$), consistent with $\operatorname{sinc}$ theory.
-      \item \textbf{Noise:} RT degrades gracefully; MUSIC is precision-first but collapses beyond a noise threshold.
+      \item \textbf{Noise:} RT degrades gracefully; MUSIC is precision-first but collapses beyond a noise threshold. Computing with SVD seems less sensitive to noise.
     \end{itemize}
   \end{tcolorbox}
 
