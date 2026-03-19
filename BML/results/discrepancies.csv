@@ -1,0 +1,221 @@
+Model,Sampler,Lambda,Delta,h_minus_delta,Run
+Multivariate Normal,NUTS,,0.25,-0.10972969866135418,0
+Multivariate Normal,NUTS,,0.3,-0.212535113334674,0
+Multivariate Normal,NUTS,,0.35,-0.05734258165857953,0
+Multivariate Normal,NUTS,,0.4,-0.07677918444755605,0
+Multivariate Normal,NUTS,,0.44999999999999996,-0.008502162583961026,0
+Multivariate Normal,NUTS,,0.5,0.1532042896144421,0
+Multivariate Normal,NUTS,,0.55,0.09610504952695953,0
+Multivariate Normal,NUTS,,0.6,-0.07705368083153685,0
+Multivariate Normal,NUTS,,0.6499999999999999,0.05036295544936564,0
+Multivariate Normal,NUTS,,0.7,0.09453721031935602,0
+Multivariate Normal,NUTS,,0.75,0.08364471654013428,0
+Multivariate Normal,NUTS,,0.7999999999999999,0.05874831799615865,0
+Multivariate Normal,NUTS,,0.85,0.013254014604747621,0
+Multivariate Normal,NUTS,,0.8999999999999999,-0.0007840354907916458,0
+Multivariate Normal,NUTS,,0.95,0.0017022178007403133,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.25,-0.24330476626313396,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.35,-0.06712661358441246,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.44999999999999996,-0.11964645667341312,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.55,0.1512001660125062,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.6499999999999999,0.18961309034758866,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.75,0.10207041113562054,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.85,0.04882779152194705,0
+Multivariate Normal,HMC $\epsilon L=1.5$,1.5,0.95,0.009459356692449461,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.25,-0.2434709814134826,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.35,-0.2671452378445329,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.44999999999999996,0.02689934530227378,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.55,0.11155476566972666,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.6499999999999999,0.14691601797068343,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.75,0.08478446020028685,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.85,0.06735070677389066,0
+Multivariate Normal,HMC $\epsilon L=3.4$,3.4,0.95,0.00581924321541194,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.25,-0.21714360231680332,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.35,-0.3485983544162203,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.44999999999999996,-0.08426553183373453,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.55,0.09682814285595609,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.6499999999999999,-0.006474910202275641,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.75,0.11183366945117112,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.85,0.0644874582319922,0
+Multivariate Normal,HMC $\epsilon L=7.8$,7.8,0.95,0.003700246105933558,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.25,-0.2263342232150209,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.35,-0.13872385031122253,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.44999999999999996,0.1515875487999261,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.55,0.17005386534852518,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.6499999999999999,0.10692670949951755,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.75,0.14245122536487476,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.85,0.027267874964932437,0
+Multivariate Normal,HMC $\epsilon L=18$,18.0,0.95,0.007634760146857156,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.25,-0.2499933882485242,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.35,-0.044493474560402924,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.44999999999999996,0.03219751354465017,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.55,0.05297425717928128,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.6499999999999999,0.1436933829817878,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.75,0.09211817207155404,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.85,0.06972534776176442,0
+Multivariate Normal,HMC $\epsilon L=40$,40.0,0.95,-0.006631757563110741,0
+Logistic Regression,NUTS,,0.25,-0.24999992223301534,0
+Logistic Regression,NUTS,,0.3,-0.2999984037291493,0
+Logistic Regression,NUTS,,0.35,-0.3442271340933514,0
+Logistic Regression,NUTS,,0.4,-0.00043683506496461355,0
+Logistic Regression,NUTS,,0.44999999999999996,0.17508450434377498,0
+Logistic Regression,NUTS,,0.5,0.31239488175918906,0
+Logistic Regression,NUTS,,0.55,0.15302522759459602,0
+Logistic Regression,NUTS,,0.6,0.17621545019550255,0
+Logistic Regression,NUTS,,0.6499999999999999,0.11046985649285213,0
+Logistic Regression,NUTS,,0.7,0.11496292049595769,0
+Logistic Regression,NUTS,,0.75,0.06449710557257005,0
+Logistic Regression,NUTS,,0.7999999999999999,0.08592570235481001,0
+Logistic Regression,NUTS,,0.85,0.05832681976079923,0
+Logistic Regression,NUTS,,0.8999999999999999,0.01375732008279651,0
+Logistic Regression,NUTS,,0.95,0.012953574510278676,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.25,-0.24941335016317023,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.35,-0.3411290413566451,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.44999999999999996,-0.05609223335128671,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.55,-0.0147387720105715,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.6499999999999999,0.15259111169356065,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.75,0.12431914748507267,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.85,0.07390512109943193,0
+Logistic Regression,HMC $\epsilon L=0.075$,0.075,0.95,-0.013389280875518605,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.25,-0.25,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.35,-0.32316143566472805,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.44999999999999996,0.25922853891377773,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.55,0.20444853265524,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.6499999999999999,0.12798361245797207,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.75,0.15205608021609507,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.85,0.1018154119101995,0
+Logistic Regression,HMC $\epsilon L=0.17$,0.17,0.95,0.01723554743197575,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.25,-0.23160960476330872,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.35,-0.1763551328780056,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.44999999999999996,-0.07829809087837308,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.55,0.11509468449779559,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.6499999999999999,0.1547055232095651,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.75,0.11794377792795674,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.85,0.06256284682343138,0
+Logistic Regression,HMC $\epsilon L=0.39$,0.39,0.95,0.0025224819465472503,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.25,-0.25,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.35,-0.3385914436834039,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.44999999999999996,0.002353560909291341,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.55,0.1397891951867083,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.6499999999999999,0.1809522554259123,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.75,0.13096711526989624,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.85,0.05712775355659083,0
+Logistic Regression,HMC $\epsilon L=0.88$,0.88,0.95,0.021699128094068043,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.25,-0.23,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.35,-0.35,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.44999999999999996,0.04470043212026048,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.55,-0.017950645169236834,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.6499999999999999,0.2277287751657242,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.75,0.0925658423664949,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.85,0.03161837813520141,0
+Logistic Regression,HMC $\epsilon L=2$,2.0,0.95,0.005834449239464745,0
+Hierarchical Logistic Regression,NUTS,,0.25,-0.23283918458249353,0
+Hierarchical Logistic Regression,NUTS,,0.3,-0.2807208170980187,0
+Hierarchical Logistic Regression,NUTS,,0.35,-0.28897525697695225,0
+Hierarchical Logistic Regression,NUTS,,0.4,-0.308050394846292,0
+Hierarchical Logistic Regression,NUTS,,0.44999999999999996,-0.22422145756752399,0
+Hierarchical Logistic Regression,NUTS,,0.5,0.15147104134363654,0
+Hierarchical Logistic Regression,NUTS,,0.55,-0.001856721540142936,0
+Hierarchical Logistic Regression,NUTS,,0.6,0.09035759656839815,0
+Hierarchical Logistic Regression,NUTS,,0.6499999999999999,0.1532440126761645,0
+Hierarchical Logistic Regression,NUTS,,0.7,0.03405837536119338,0
+Hierarchical Logistic Regression,NUTS,,0.75,0.08697150698252187,0
+Hierarchical Logistic Regression,NUTS,,0.7999999999999999,0.04000662691725554,0
+Hierarchical Logistic Regression,NUTS,,0.85,0.0018194541912618378,0
+Hierarchical Logistic Regression,NUTS,,0.8999999999999999,-0.0030211834516302716,0
+Hierarchical Logistic Regression,NUTS,,0.95,-0.005089808445334243,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.25,-0.21800398771095209,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.35,-0.13450583379338285,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.44999999999999996,0.09435809399285067,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.55,0.2025232423212483,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.6499999999999999,0.17596548801406153,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.75,0.12273140780765956,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.85,0.08679989380532438,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.044$,0.044,0.95,-0.007251117301393162,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.25,-0.25,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.35,-0.3299989007488945,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.44999999999999996,-0.2724285035333096,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.55,0.0032961168307072963,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.6499999999999999,0.03465110325432541,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.75,0.11845034517399289,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.85,0.07780190595999259,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.097$,0.097,0.95,0.0101540772758969,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.25,-0.23,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.35,-0.34511912810249656,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.44999999999999996,-0.2710118903407145,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.55,-0.059251578348099854,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.6499999999999999,0.14320463976701858,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.75,0.1218287843504412,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.85,0.04092277357858676,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.21$,0.21,0.95,-0.020472775058373083,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.25,-0.23,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.35,-0.3499398574712388,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.44999999999999996,-0.2267366712713155,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.55,0.1347786953336213,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.6499999999999999,0.10801480234143068,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.75,0.14104831378630434,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.85,0.06294996643554462,0
+Hierarchical Logistic Regression,HMC $\epsilon L=0.46$,0.46,0.95,0.014876731555733103,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.25,-0.25,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.35,-0.349999999994291,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.44999999999999996,-0.16985971994212518,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.55,0.009695048335739309,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.6499999999999999,0.12852623274316555,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.75,0.12905449894336452,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.85,0.07779306636722239,0
+Hierarchical Logistic Regression,HMC $\epsilon L=1$,1.0,0.95,0.01238021388339372,0
+Stochastic Volatility,NUTS,,0.25,0.5575026574466823,0
+Stochastic Volatility,NUTS,,0.3,0.5129256041722856,0
+Stochastic Volatility,NUTS,,0.35,0.4615144330340514,0
+Stochastic Volatility,NUTS,,0.4,0.3664450102919745,0
+Stochastic Volatility,NUTS,,0.44999999999999996,0.38259808886729796,0
+Stochastic Volatility,NUTS,,0.5,0.38496565518170345,0
+Stochastic Volatility,NUTS,,0.55,0.3587736881045036,0
+Stochastic Volatility,NUTS,,0.6,0.30590152425876427,0
+Stochastic Volatility,NUTS,,0.6499999999999999,0.273211191747058,0
+Stochastic Volatility,NUTS,,0.7,0.21969966637441862,0
+Stochastic Volatility,NUTS,,0.75,0.20035979136384663,0
+Stochastic Volatility,NUTS,,0.7999999999999999,0.11484305754691726,0
+Stochastic Volatility,NUTS,,0.85,0.1170881585930924,0
+Stochastic Volatility,NUTS,,0.8999999999999999,0.06768971660644452,0
+Stochastic Volatility,NUTS,,0.95,0.04006308934745484,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.25,0.5274692429077835,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.35,0.3475840518921195,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.44999999999999996,0.28679223428198564,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.55,0.3512142368873655,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.6499999999999999,0.2582278733581794,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.75,0.18639800431203424,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.85,0.11487499604290086,0
+Stochastic Volatility,HMC $\epsilon L=0.15$,0.15,0.95,0.041137131654938375,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.25,0.5962025636626791,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.35,0.48134754547130043,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.44999999999999996,0.4038200465475221,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.55,0.3145780643907242,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.6499999999999999,0.26814358432398044,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.75,0.19319894457076858,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.85,0.09516990371683653,0
+Stochastic Volatility,HMC $\epsilon L=0.34$,0.34,0.95,0.04092249580866769,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.25,0.5252117882379826,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.35,0.5129650540907115,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.44999999999999996,0.44887783018069194,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.55,0.3038110891273237,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.6499999999999999,0.23196481846381578,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.75,0.1933066566806998,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.85,0.1038724357204539,0
+Stochastic Volatility,HMC $\epsilon L=0.78$,0.78,0.95,0.041776309593200556,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.25,0.24717922108136364,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.35,-0.07343788291329684,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.44999999999999996,-0.21544174141527941,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.55,-0.28092023461602644,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.6499999999999999,-0.6300077945718072,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.75,-0.7300797859438379,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.85,-0.85,0
+Stochastic Volatility,HMC $\epsilon L=1.8$,1.8,0.95,0.04047684376098959,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.25,0.05596197737074726,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.35,-0.2087915542579293,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.44999999999999996,-0.4300103318625218,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.55,-0.55,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.6499999999999999,-0.6300013993569253,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.75,-0.7107615765095039,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.85,-0.7736889941469154,0
+Stochastic Volatility,HMC $\epsilon L=4$,4.0,0.95,0.0028749788525400666,0
