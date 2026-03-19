@@ -1,0 +1,19 @@
+# Latex stuff
+*.aux
+*.bbl
+*.bcf
+*.fls
+*.fdb_latexmk
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.toc
+*.xsim
+*.blg
+*.gz
+report.log
+
+.venv/
+documents/
