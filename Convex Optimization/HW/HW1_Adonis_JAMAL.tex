@@ -1,0 +1,516 @@
+\documentclass[11pt,a4paper]{article}
+
+% ===== Basic Packages =====
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\geometry{left=1cm, right=1cm}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{todonotes}
+
+% ===== Optional: Listings (kept minimal) =====
+\usepackage{xcolor}
+\usepackage{listings}
+
+% ===== Custom Environments =====
+\newenvironment{solution}{
+  \par\noindent\textbf{Answer:}\vspace{0.3em}
+}{\vspace{1em}}
+
+\DeclareMathOperator{\sign}{sign}
+% ===== Document =====
+\begin{document}
+
+% Cover page
+\begin{titlepage}
+\begin{center}
+
+% Title
+{\huge \bfseries Convex Optimization\\[0.4cm]}
+
+{\large \bfseries Homework 1\\[0.4cm] }
+{\Large Adonis \textsc{Jamal}}
+
+\vspace{3cm}
+
+\tableofcontents
+
+\end{center}
+\end{titlepage}
+
+% Table spacing
+\renewcommand{\arraystretch}{1.5}
+\newpage
+
+
+\section{Exercise 1 - Convex Sets}
+
+\begin{enumerate}
+\item A slab, i.e., a set of the form
+\[
+\{ x \in \mathbb{R}^n \mid \alpha \leq a^T x \leq \beta \}.
+\]
+
+\begin{solution}
+\underline{This set is convex.}\\
+It is the intersection of two halfspaces, which are convex sets:
+\[
+\{ x \in \mathbb{R}^n \mid a^T x \leq \beta \} \cap 
+\{ x \in \mathbb{R}^n \mid \alpha \leq a^T x \}.
+\]
+Since the intersection of convex sets is convex, the slab is convex.
+\end{solution}
+
+
+
+\item A rectangle, i.e., a set of the form
+\[
+    \{ x \in \mathbb{R}^n \mid \alpha_i \leq x_i \leq \beta_i, i = 1, \dots, n \}.
+\]
+
+\begin{solution}
+    \underline{This set is convex.}\\
+    \begin{align*}
+        \{ x \in \mathbb{R}^n \mid \alpha_i \leq x_i \leq \beta_i, i = 1, \dots, n \}
+        &= \bigcap_{i=1}^{n} \{ x \in \mathbb{R}^n \mid \alpha_i \leq x_i \leq \beta_i \} \\
+        &= \bigcap_{i=1}^{n} \left( \{ x \in \mathbb{R}^n \mid \alpha_i \leq x_i \} 
+        \cap \{ x \in \mathbb{R}^n \mid x_i \leq \beta_i \} \right).
+    \end{align*}
+    It is an intersection of halfspaces, thus convex.
+\end{solution}
+
+
+
+\item A wedge, i.e.,
+\[
+    \{ x \in \mathbb{R}^n \mid a_1^T x \leq b_1,\ a_2^T x \leq b_2 \}.
+\]
+
+\begin{solution}
+    \underline{This set is convex.}\\
+    It is the intersection of two halfspaces, thus convex:
+        \[
+            \{x \in \mathbb{R}^n \mid a_1^T x \leq b_1\} \cap 
+            \{x \in \mathbb{R}^n \mid a_2^T x \leq b_2\}.
+        \]
+\end{solution}
+
+
+
+\item The set of points closer to a given point than a given set, i.e.,
+\[
+    \{ x \mid \|x - x_0\|_2 \leq \|x - y\|_2 \ \text{for all } y\in S \}, \quad S \subseteq \mathbb{R}^n.
+\]
+
+\begin{solution}
+    \underline{This set is convex.}\\
+    Let $y \in S$, and $x_0 \in \mathbb{R}^n$.
+    \begin{align*}
+        \|x - x_0\|_2 \leq \|x - y\|_2
+        &\Leftrightarrow (x - x_0)^T (x - x_0) \leq (x - y)^T (x - y)\\
+        &\Leftrightarrow x^T x - 2 x_{0}^T x + x_{0}^T x_0 \leq x^T x - 2y^T x + y^T y\\
+        &\Leftrightarrow 2(y - x_0)^T x \leq y^T y - x_{0}^T x_0
+    \end{align*}
+    Notice that the norm inequality is equivalent to a halfspace $a^T x \leq b$, with
+    \[
+        a = 2(y - x_0), \quad b = y^T y - x_{0}^T x_0.
+    \]
+    We get the following equality:
+    \begin{align*}
+        \{ x \mid \|x - x_0\|_2 \leq \|x - y\|_2 \ \text{for all } y\in S \} 
+        &= \bigcap_{y \in S} \{x \mid \|x - x_0\|_2 \leq \|x - y\|_2\}\\
+        &= \bigcap_{y \in S} \{x \mid 2(y - x_0)^T x \leq y^T y - x_{0}^T x_0\}
+    \end{align*}
+    Since the set is the intersection of halfspaces, it is convex.
+\end{solution}
+
+
+
+\item The set of points closer to one set than another, i.e.,
+\[
+    \{ x \mid \mathrm{dist}(x, S) \leq \mathrm{dist}(x, T) \},\quad S, T \subseteq \mathbb{R}^n,
+\]
+where
+\[
+\mathrm{dist}(x, S) = \inf \{ \| x - z \|_2 \mid z \in S \}.
+\]
+
+\begin{solution}
+    \underline{This set is not convex.}\\
+    Let's provide an example where this set is not convex in $\mathbb{R}$.\\
+    Let
+    \[S = [0,3] \cup [7, 10], \quad T = [4, 6]\]
+    We notice that:
+    \[
+        \{ x \mid \mathrm{dist}(x, S) \leq \mathrm{dist}(x, T) \} = ]-\infty, 3.5] \cup [6.5, +\infty[
+    \]
+    Which is clearly not a convex set.
+\end{solution}
+
+
+\item The set
+\[
+    \{ x \mid x + S_2 \subseteq S_1 \}, \quad S_1, S_2 \subseteq\mathbb{R}^n \ \text{with } S_1 \text{ convex}.
+\]
+
+\begin{solution}
+    \underline{This set is convex.}\\
+    \begin{align*}
+        \{ x \mid x + S_2 \subseteq S_1 \}
+        &= \{x \mid x + y \in S_1, \forall y \in S_2\}\\
+        &= \bigcap_{y \in S_2} \{x \mid x + y \in S_1\}\\
+        &= \bigcap_{y \in S_2} S_1 - y
+    \end{align*}
+    We notice that this set is just a translation of $S\_1$, which is a convex set. The set is an intersection of convex sets, which means that it is convex.
+\end{solution}
+
+\item The set of points whose distance to $a$ does not exceed a fixed fraction $\theta$ of the distance to $b$,i.e.,
+\[
+    \{ x \mid \| x - a \|_2 \leq \theta \| x - b \|_2 \}, \quad a \neq b,\ 0 \leq \theta \leq 1.
+\]
+
+\begin{solution}
+    \underline{This set is convex.}
+
+    First, let's consider the case $\theta = 0$. We get $\| x - a \|_2 \leq 0$. Since the norm must be non-negative, $\|x-a\|_2 = 0$, which implies $x=a$. The set $\{a\}$ contains a single point, and is thus convex.\\
+
+    
+    Let's also consider the case $\theta=1$. The inequality becomes:
+    \[
+        \|x-a\|_2 \leq \|x-b\|_2
+    \]
+    We immediatly notice that this is simply a special case of problem 4, where $S = \{b\}$ and $x_0 = a$. We have already proven that the set of problem 4 is convex, which means that the set for $\theta=1$ is also convex.\\
+
+    
+    We now assume $0 < \theta < 1$. Let's look at the norm inequality:
+    \begin{align*}
+        \|x - a\|_2 \leq \theta \|x - b\|_2
+        &\Leftrightarrow \|x - a\|_2^2 \leq \theta^2 \|x - b\|_2^2\\
+        &\Leftrightarrow (x - a)^T (x - a) \leq \theta^2 (x - b)^T (x - b)\\
+        &\Leftrightarrow x^T x + a^T a - 2a^T x \leq \theta^2 x^T x + \theta^2 b^T b - 2\theta^2 b^T x\\
+        &\Leftrightarrow (1 - \theta^2) x^T x + 2(\theta^2 b^T - a^T) x \leq \theta^2 b^T b - a^T a
+    \end{align*}
+    By completing the square, we get
+    \begin{align*}
+        (1 - \theta^2) x^T x + 2(\theta^2 b^T - a^T) x
+        &= (1 - \theta^2) x^T x + 2\frac{\sqrt{1 - \theta^2}}{\sqrt{1 - \theta^2}}(\theta^2 b - a)^T x + \frac{1}{\sqrt{1 - \theta^2}}(\theta^2 b - a)^T (\theta^2 b - a) - \frac{1}{\sqrt{1 - \theta^2}}(\theta^2 b - a)^T (\theta^2 b - a)\\
+        &= \left\| \sqrt{1 - \theta^2}x + \frac{\theta^2 b - a}{\sqrt{1 - \theta^2}} \right\|_2 - \frac{1}{\sqrt{1 - \theta^2}}(\theta^2 b - a)^T (\theta^2 b - a)\\
+        &= \sqrt{1 - \theta^2}\left\|x + \frac{\theta^2 b - a}{1 - \theta^2} \right\|_2 - \frac{1}{\sqrt{1 - \theta^2}}(\theta^2 b - a)^T (\theta^2 b - a)\\
+    \end{align*}
+    Which means that:
+    \begin{align*}
+        \|x - a\|_2 \leq \theta \|x - b\|_2
+        &\Leftrightarrow \sqrt{1 - \theta^2}\left\|x + \frac{\theta^2 b - a}{1 - \theta^2} \right\|_2 \leq \theta^2 b^T b - a^T a + \frac{1}{\sqrt{1 - \theta^2}}(\theta^2 b - a)^T (\theta^2 b - a)\\ 
+        &\Leftrightarrow \left\|x - \frac{a - \theta^2 b}{1 - \theta^2} \right\|_2 \leq \frac{\theta^2 b^T b - a^T a}{\sqrt{1 - \theta^2}} + \frac{1}{1 - \theta^2}(\theta^2 b - a)^T (\theta^2 b - a)\\
+    \end{align*}
+    Notice that this is just a norm ball with
+    \[
+        \text{center } x_c = \frac{a - \theta^2 b}{1 - \theta^2} \quad \text{and radius } r = \frac{\theta^2 b^T b - a^T a}{\sqrt{1 - \theta^2}} + \frac{1}{1 - \theta^2}(\theta^2 b - a)^T (\theta^2 b - a).
+    \]
+    Since the norm ball set is convex, this set is also convex.
+\end{solution}
+
+\end{enumerate}
+
+
+
+
+
+\section{Exercise 2 - Pointwise Maximum and Supremum}
+
+\begin{enumerate}
+\item 
+\[
+f(x) = \max_{i=1,\dots,k} \| A^{(i)} x - b^{(i)} \|,
+\]
+where $A^{(i)} \in \mathbb{R}^{m \times n}$, $b^{(i)} \in \mathbb{R}^m$, and $\| \cdot \|$ is a norm on $\mathbb{R}^m$.
+
+\begin{solution}
+    Let $f_i (x) = \| A^{(i)} x - b^{(i)}\|$, for $i = 1, \dots, k$. This function is the composition of the norm of an affine function, which makes it convex for every $i$. Since $f$ is the maximum of the $f_i$ convex functions, \underline{$f$ is convex}.
+\end{solution}
+
+
+
+\item 
+\[
+f(x) = \sum_{i=1}^r |x|_{[i]} \quad \text{on } \mathbb{R}^n,
+\]
+where $|x|$ denotes the vector with $|x|_i = |x_i|$, and $|x|_{[i]}$ is the $i$-th largest component of $|x|$.
+
+\begin{solution}
+    We can rewrite $f$ as:
+    \begin{align*}
+        f(x) 
+        &= \max \{x_{i_1} + \dots + x_{i_r}, 1 \leq i_1 \leq \dots \leq i_r \leq n \}\\
+        &= \max_{1 \leq i_1 \leq \dots \leq i_r \leq n} \sum_{k=1}^r |x|_{i_k}
+    \end{align*}
+    $f$ is the maximum of the sum of $\binom{n}{r}$ convex functions. Thus, \underline{$f$ is convex}.
+\end{solution}
+
+\end{enumerate}
+
+
+\section{Exercise 3 - Products and Ratios of Convex Functions}
+\begin{quote}
+\emph{If $f$ and $g$ are convex, both nondecreasing (or nonincreasing), and positive functions on an interval, then $fg$ is convex.}
+\end{quote}
+
+\begin{solution}
+    Let's assume that $f,g \geq 0$ on $I$, and $\theta \in [0,1]$. Then, for $x, y \in I$, we denote $z$ as:
+    \[
+    z = \theta x + (1 - \theta) y
+    \]
+    In order to prove that $fg$ is convex, we want to show that:
+    \[
+    f(z)g(z) \leq \theta f(x) g(x) + (1 - \theta) f(y) g(y)
+    \]
+    We have, by the convexity of $f$ and $g$:
+    \begin{align*}
+        f(z) g(z)
+        &\leq \left( \theta f(x) + (1 - \theta) f(y)\right) \left( g(x) + (1 - \theta) g(y)\right)\\
+        &= \theta^2 f(x) g(x) + (1 - \theta)^2 f(y) g(y) + \theta (1 - \theta) f(x) g(y) + \theta (1 - \theta) f(y) g(x)\\
+        &= \alpha
+    \end{align*}
+    We thus have:
+    \begin{align*}
+        \theta f(x) g(x) + (1 - \theta) f(y) g(y) - \alpha
+        &= \theta (1 - \theta) \left( f(x) - f(y) \right) \left(g(x) - g(y) \right)\\
+    \end{align*}
+    Since we assume that both $f$ and $g$ are nondecreasing (or nonincreasing), notably on interval $I$, then we have:
+    \[
+    \sign f(x) - f(y) = \sign g(x) - g(y)
+    \]
+    with $\theta (1 - \theta) \geq 0$, we get:
+    \begin{align*}
+        \theta f(x) g(x) + (1 - \theta) f(y) g(y) - \alpha
+        &= \theta (1 - \theta) \left( f(x) - f(y) \right) \left(g(x) - g(y) \right) \geq 0\\
+        &\Leftrightarrow \alpha \leq \theta f(x) g(x) + (1 - \theta) f(y) g(y)\\
+        &\Leftrightarrow \left( \theta f(x) + (1-\theta)f(y)\right)\left(\theta g(x) + (1-\theta)g(y)\right) \leq \theta f(x) g(x) + (1 - \theta) f(y) g(y)\\
+        &\implies f(z) g(z) \leq \theta f(x) g(x) + (1 - \theta) f(y) g(y)
+    \end{align*}
+    This is the definition of convexity. We have proved that \underline{$fg$ is convex} if $f$ and $g$ are convex, both nondecreasing (or nonincreasing), and positive functions on an interval.
+\end{solution}
+
+
+\section{Exercise 4 - Conjugates of Functions}
+\begin{enumerate}
+    \item Max function:
+    \[
+    f(x) = \max_{i=1,\dots,n} x_i \quad \text{on } \mathbb{R}^n.
+    \]
+
+    \begin{solution}
+        The conjugate of $f$ is
+        \[
+        f^*(y) = \begin{cases}
+            0 & \text{if } \sum_{i=1}^n y_i = 1 \text{ and } y_i \geq 0 \text{ for all } i\\
+            +\infty & \text{otherwise}
+        \end{cases}
+        \]
+
+        Let us start with the definition of the conjugate of function $f(x)$. It is defined as:
+        \[
+            f^* (y) = \sup_{x \in \mathbb{R}^n} \left\{ y^T x - f(x)\right\}
+        \]
+        For the max function, this is equal to:
+        \[
+            f^* (y) = \sup_{x \in \mathbb{R}^n} \left\{ \sum_{i=1}^n y_i x_i - \max_{j=1, \dots, n} x_j \right\} = \sup_{x \in \mathbb{R}^n} \phi(x, y)
+        \]
+        We then determine the conditions on $y$ in order for the supremum to be finite.\\
+        We make the asssumption that $y_k < 0$ for some index $k \in \{1, \dots, n\}$. Let $x$ be a vector such that, for $t > 0$: 
+        \[
+            x = - \delta_{k} t = \begin{cases}
+                -t & \text{if } i = k\\
+                0 & \text{if } i \neq k
+            \end{cases}
+        \]
+        We can then express $\phi(x, y)$ as:
+        \begin{align*}
+            \phi(x, y)
+            &= \sum_{i=1}^n y_i x_i - \max_{j=1, \dots, n} x_j\\
+            &= -y_k t - \max(0, -t)\\
+            &= -y_k t
+        \end{align*}
+        Since we assumed $y_k < 0$, then $\phi(x, y)$ is positive and approaches $\infty$ as $t \to \infty$. This means that if any component of y is negative, then the supremum is infinite.
+
+        Now that we established for we must have $y_i \geq 0$ for all $i = 1, \dots, n$, let's consider another vector $x$. This time, we assume that all components are equal to some $t > 0$. We write $x$ as $x = (t, t, \dots, t)$. Our expression of $\phi(x, y)$ becomes:
+        \begin{align*}
+            \phi(x, y)
+            &= \sum_{i=1}^n y_i t - \max_{j=1, \dots, n} (t, t, \dots, t)\\
+            &= t \sum_{i=1}^n y_i - t\\
+            &= t \left( \sum_{i=1}^n y_i - 1 \right)\\
+            &= t \alpha
+        \end{align*}
+
+        If $\alpha > 0$ and $t \to \infty$, then the supremum is infinite. If $\alpha < 0$ and $t \to \infty$, then the supremum is also infinite. Which means that $\alpha$ must be equal to $0$, or in other words, we must have $\sum_{i=1}^n y_i = 1$ for $f^* (y)$ to be finite.
+
+        In conclusion, the supremum is finite if:
+        \begin{enumerate}
+            \item $y_i \geq 0$ for all $i = 1, \dots, n$
+            \item $\sum_{i=1}^n y_i = 1$
+        \end{enumerate}
+
+        We can now calculate the supremum under the conditions above.\\
+        Let $m = \max_{j=1,\dots, n} x_j$. We get the following inequalities:
+        \begin{align*}
+            x_i \leq m
+            &\implies y_i x_i \leq y_i m\\
+            &\implies \sum_{i=1}^n y_i x_i \leq \sum_{i=1}^n y_i m\\
+            &\implies \sum_{i=1}^n y_i x_i \leq m \sum_{i=1}^n y_i\\
+            &\implies \sum_{i=1}^n y_i x_i \leq m\\
+            &\implies \phi(x, y) = \sum_{i=1}^n y_i x_i - m \leq m - m = 0
+        \end{align*}
+        For any vector $x$, the expression, and thus the supremum, is less than or equal to $0$. We can find an $x$ such that the expression is $0$. We consider once again the vector $x = (t, t, \dots, t)$. For this $x$, $\phi(x, y) = t(\sum_{i=1}^n y_i - 1) = t(1 - 1) = 0$. Since the value of $0$ is reached, we conclude that the supremum must be $0$.
+
+        We finally get the conjugate function:
+        $$f^*(y) = \begin{cases}
+            0 & \text{if } \sum_{i=1}^n y_i = 1 \text{ and } y_i \geq 0 \text{ for all } i\\
+            +\infty & \text{otherwise}
+        \end{cases}$$
+    \end{solution}
+
+
+
+    \item Sum of largest elements:
+    \[
+    f(x) = \sum_{i=1}^r x_{[i]} \quad \text{on } \mathbb{R}^n.
+    \]
+
+    \begin{solution}
+        The conjugate of f is
+        \[
+            f^* (y) = \begin{cases}
+                0 &\text{ if } 0 \preceq y \preceq 1 \text{ and } \sum_{i=1}^n y_i = r\\
+                +\infty &\text{ otherwise}
+            \end{cases}
+        \]
+
+        Once again, we proceed with the same steps, starting with determining the domain of the conjugate function.\\
+        Let $phi(x, y) = y^T x - \sum_{i=1}^r x_{[i]}$. Let $x = (t, t, \dots, t)$, such that all components, and notably the $r$ largest components, are all equal to $t$. $phi(x, y)$ becomes:
+        \begin{align*}
+            \phi(x, y)
+            &= y^T x - \sum_{i=1}^r x_{[i]}\\
+            &= t \sum_{i=1}^n y_i - rt\\
+            &= t(\sum_{i=1}^n y_i - r)\\
+            &= t \alpha
+        \end{align*}
+        Notice that if $\alpha$ is not null, then the supremum is infinite as $t \to +\infty$ or $t \to -\infty$. We must have:
+        \[
+            \sum_{i=1}^n y_i = r
+        \]
+        Now let's assume that $x = \delta_k t = (0, \dots, t, \dots, 0)$ for some index $k$ and $t > 0$. We can express $\phi(x, y)$ as:
+        \[
+            \phi(x, y) = t y_k - t = t (y_k - 1)
+        \]
+        Notice that if $y_k > 1$ then the supremum is infinite for $t \to +\infty$. We must have $y_{[i]} \leq 1$ for all $i=1, \dots, r$.\\
+        If we assume that $x = -\delta_k t$ for some index $k$ and $t > 0$, then $\phi(x, y)$ becomes:
+        \[
+            \phi(x, y) = -t y_k
+        \]
+        If $y_k < 0$ for some $k > r$ then as $t \to +\infty$, the supremum is infinite. We conclude that $y_i$ must be positive for all $i = r+1, \dots, n$. Putting this together with the previous condition, we get that $0 \leq y_i \leq 1$ must be true for all $i = 1, \dots, n$.\\
+        
+        In conclusion, the supremum is finite if:
+        \begin{enumerate}
+            \item $\sum_{i=1}^n y_i = r$
+            \item $0 \leq y_i \leq 1$ for all $i = 1, \dots, n$
+        \end{enumerate}
+
+        We can now calculate the supremum under the conditions above.\\
+        We rewrite $\phi(x, y)$ as:
+        \begin{align*}
+            \phi(x, y)
+            &= \sum_{i=1}^n y_{[i]} x_{[i]} - \sum_{i=1}^r x_{[i]}\\
+            &= \sum_{i=1}^r y_{[i]} x_{[i]} + \sum_{i=r+1}^n y_{[i]} x_{[i]} - \sum_{i=1}^r x_{[i]}\\
+            &= \sum_{i=1}^r (y_{[i]} - 1) x_{[i]} + \sum_{i=r+1}^n y_{[i]} x_{[i]}
+        \end{align*}
+        We notice, under the conditions above, that $y_i - 1 \leq 0$, $x_{[i]}$ in the left sum term is superior to $x_{[r]}$ (under the assumption that the values are sorted from largest to smallest, without any loss of generality), $y_{[i]}$ in the right sum term is positive and $x_{[i]}$ is smaller than $x_{[r]}$ for $i = r+1, \dots, n$. We get the following bound:
+        \begin{align*}
+            \phi(x, y)
+            &= \sum_{i=1}^r (y_{[i]} - 1) x_{[i]} + \sum_{i=r+1}^n y_{[i]} x_{[i]}\\
+            &\leq \sum_{i=1}^r (y_{[i]} - 1) x_{[r]} + \sum_{i=r+1}^n y_{[i]} x_{[r]}\\
+            &= \left( \sum_{i=1}^n y_{[i]} - r \right) x_{[r]}\\
+            &= 0
+        \end{align*}
+        $\phi(x, y)$ is bounded by $0$, and equal to $0$ for $x = (t, t, \dots, t)$ since $\sum_{i=1}^n y_i = r$. The supremum is thus equal to 0.\\
+        
+        We finally get the conjugate function:
+        \[
+            f^* (y) = \begin{cases}
+                0 &\text{ if } 0 \preceq y \preceq 1 \text{ and } \sum_{i=1}^n y_i = r\\
+                +\infty &\text{ otherwise}
+            \end{cases}
+        \]
+    \end{solution}
+
+
+    \item Piecewise-linear function on $\mathbb{R}$:
+    \[
+    f(x) = \max_{i=1,\dots,m} (a_i x + b_i),
+    \]
+    with $a_1 \leq \cdots \leq a_m$ and no redundant function.
+
+
+    \begin{solution}
+        The conjugate of f is
+        \[
+            f^* (y) = \begin{cases}
+                (y - a_k) \left( \frac{b_k - b_{k+1}}{a_{k+1} - a_k} \right) - b_k &\text{ if } y \in [a_k, a_{k+1}] \text{ for } k=1, \dots, m-1\\
+                +\infty &\text{ if } y \notin [a_1, a_m] 
+            \end{cases}
+        \]
+        We start with determining the domain of the conjugate function.\\
+        Let $\phi(x, y) = y x - \max_{i=1,\dots,m} (a_i x + b_i)$. Looking at the behavior of $\phi$ as $x \to +\infty$, we notice that the term in the max with the largest slope $a_m$ will dominate. We get:
+        \[
+            \phi(x, y) = yx - (a_m x + b_m) = (y - a_m) x - b_m
+        \]
+        In order for $\phi(x, y)$ not to go to $+\infty$ as $x \to +\infty$, we must have $y - a_m \leq 0$, which implies $y \leq a_m$.\\
+        On the other hand, if $x \to -\infty$, then the term in the max with the smallest slope $a_1$ will dominate. $\phi(x, y)$ becomes:
+        \[
+            \phi(x, y) = yx - (a_1 x + b_1) = (y - a_1) x - b_1
+        \]
+        In order for $\phi(x, y)$ not to go to $+\infty$ as $x \to -\infty$, we must have $y - a_1 \geq 0$, which implies $y \geq a_1$.\\
+
+        In conclusion, the supremum is finite if y is in the closed interval $[a_1, a_m]$. Outside of this interval, $f^*(y) = +\infty$.
+
+        We can now calculate the supremum for $y \in [a_1, a_m]$.\\
+        Let's rewrite $\phi(x, y)$ as:
+        \begin{align*}
+            \phi(x, y)
+            &= y x - \max_{i=1,\dots,m} (a_i x + b_i)\\
+            &= \min_{i=1,\dots,m} \left( (y - a_i) x - b_i \right)\\
+            &= h(x)
+        \end{align*}
+        We notice that this function $h(x)$ is the minimum of $m$ lines. $h(x)$ is thus a piecewise-linear concave function, as the minimum of linear functions. In order to find the $\sup_{x \in \mathbb{R}}$ of this function, we look at the slopes.\\
+        Let $c_i = y - a_i$. Since $y \in [a_1, a_m]$ and the $a_i$ are ordered increasing, there must be some index $k$ such that $a_k \leq y \leq a_{k+1}$.\\
+        \begin{itemize}
+            \item For $i \leq k$, we have $a_i \leq a_k \leq y$, which means that $c_i \geq 0$.
+            \item For $i \geq k + 1$, we have $y \leq a_{k+1} \leq a_i$, which means that $c_i \leq 0$.
+        \end{itemize}
+        The $\sup$ of $h(x)$ must then occur as between $k$ and $k+1$. We will find the breakpoint $x_k$ where this happens:
+        \[
+            (y - a_k) x_k - b_k = (y - a_{k+1}) x_k - b_{k+1}
+        \]
+        Solving for $x_k$, we get:
+        \[
+            x_k = \frac{b_k - b_{k+1}}{a_{k+1} - a_k}
+        \]
+
+        We calculate our supremum at this point and we get, for $y \in [a_k, a_{k+1}]$:
+        \[
+            f^*(y) = (y - a_k) x_k - b_k = (y - a_k) \left( \frac{b_k - b_{k+1}}{a_{k+1} - a_k} \right) - b_k
+        \]
+        
+        The final conjugate function is:
+        \[
+            f^* (y) = \begin{cases}
+                (y - a_k) \left( \frac{b_k - b_{k+1}}{a_{k+1} - a_k} \right) - b_k &\text{ if } y \in [a_k, a_{k+1}] \text{ for } k=1, \dots, m-1\\
+                +\infty &\text{ if } y \notin [a_1, a_m] 
+            \end{cases}
+        \]
+    \end{solution}
+\end{enumerate}
+
+\end{document}
