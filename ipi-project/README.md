@@ -1,0 +1,1 @@
+This repository contains the code related to the assignment by Adonis Jamal and Jean-Vincent Martini on Reverse-time and Kirchhoﬀ Migration for the "Inverse Problems and Imaging" course of MVA master's degree (ENS Paris-Saclay). All the content, including the code and explanations, is available in the `RTKM_JAMAL_MARTINI.ipynb` Jupyter notebook. 

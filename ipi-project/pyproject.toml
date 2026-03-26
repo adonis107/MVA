@@ -1,0 +1,22 @@
+[project]
+name = "ipi"
+version = "0.1.0"
+description = "[MVA] Inverse Problems and Imaging Assignment on Reverse-Time and Kirchhoﬀ Migration"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ipympl>=0.10.0",
+    "matplotlib>=3.10.8",
+    "numpy>=2.2.6",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.15.3",
+    "seaborn>=0.13.2",
+    "tqdm>=4.67.3",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.31.0",
+    "ty>=0.0.10",
+]
