@@ -1,48 +1,35 @@
 .gitignore
 
 # Bayesian Machine Learning
-bml-course/
+Bayesian Machine Learning/bml-course/
 
 # Biostatistics
-Sun et al. - 2018 - A radiomics approach to assess tumour-infiltrating CD8 cells and response to anti-PD-1 or anti-PD-L1.pdf
+Biostatistics/Sun et al. - 2018 - A radiomics approach to assess tumour-infiltrating CD8 cells and response to anti-PD-1 or anti-PD-L1.pdf
 
 # Convex Optimization
-lectures/
-exams/
+Convex Optimization/lectures/
+Convex Optimization/exams/
 Convex Optimization/hw/HW1b.pdf
 Convex Optimization/hw/HW2.pdf
 Convex Optimization/hw/HW3_LASSO.pdf
 
 # Deep Learning
-lectures/
+Deep Learning/lectures/
 
 # Deep Learning in Practice
-lectures/
+Deep Learning in Practice/lectures/
+
+# Interactions
+Interactions/lectures/
 
 # Inverse Problems and Imaging
-lectures/
+Inverse Problems and Imaging/lectures/
 
 # Machine Learning for Time Series
-lectures/
+Machine Learning for Time Series/lectures/
 
 # Statistical Learning with Extreme Values
-lectures/
+Statistical Learning with Extreme Values/lectures/
 
 # Stochastic Calculus for Machine Learning
-lectures/
-
-# Latex files
-*.aux
-*.bbl
-*.bcf
-*.blg
-*.log
-*.out
-*.toc
-*.synctex.gz
-*.nav
-*.snm
-*.fls
-*.fdb_latexmk
-*.run.xml
-*/output/
+Stochastic Calculus for Machine Learning/lectures/
