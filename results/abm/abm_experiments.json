@@ -1,0 +1,536 @@
+{
+  "config": {
+    "args": {
+      "checkpoint": "results/checkpoints/systemic_risk_alg1_bins_case_1_seed7.pt",
+      "output_dir": "results/abm",
+      "case": "case_1",
+      "device": "cpu",
+      "state_dim": 1,
+      "steps": 20,
+      "horizon": 0.2,
+      "sigma": 1.0,
+      "default_threshold": -0.5,
+      "target_cascade_rate": 0.35,
+      "q_min": 0.1,
+      "q_max": 1.4,
+      "q_steps": 5,
+      "agents": 30,
+      "core_hubs": 10,
+      "er_p": 0.08,
+      "mc_paths": 32,
+      "seed": 7,
+      "n_grid": "10,30",
+      "q_grid": "0.6,0.8"
+    },
+    "abm_config": {
+      "horizon": 0.2,
+      "steps": 20,
+      "sigma": 1.0,
+      "interaction_q": 0.10000000149011612,
+      "state_dim": 1,
+      "default_threshold": -0.5
+    },
+    "checkpoint": "C:\\Users\\adoni\\Desktop\\Interactions\\project\\results\\checkpoints\\systemic_risk_alg1_bins_case_1_seed7.pt"
+  },
+  "calibration": {
+    "selected_q": 0.10000000149011612,
+    "target_cascade_rate": 0.35,
+    "sweep": [
+      {
+        "q": 0.10000000149011612,
+        "cascade_rate": 1.0
+      },
+      {
+        "q": 0.42499998211860657,
+        "cascade_rate": 1.0
+      },
+      {
+        "q": 0.75,
+        "cascade_rate": 1.0
+      },
+      {
+        "q": 1.0750000476837158,
+        "cascade_rate": 1.0
+      },
+      {
+        "q": 1.399999976158142,
+        "cascade_rate": 1.0
+      }
+    ]
+  },
+  "experiment_1_uncontrolled": {
+    "homogeneous": {
+      "hub_node": 0,
+      "stats": {
+        "mean_cascade_size": 8.4375,
+        "cascade_rate": 1.0,
+        "cascade_size_distribution": [
+          10.0,
+          9.0,
+          10.0,
+          12.0,
+          11.0,
+          10.0,
+          8.0,
+          7.0,
+          6.0,
+          6.0,
+          6.0,
+          13.0,
+          7.0,
+          8.0,
+          12.0,
+          9.0,
+          5.0,
+          7.0,
+          9.0,
+          13.0,
+          6.0,
+          7.0,
+          6.0,
+          12.0,
+          7.0,
+          3.0,
+          11.0,
+          8.0,
+          8.0,
+          10.0,
+          8.0,
+          6.0
+        ],
+        "mean_first_default_time": 8.618518829345703
+      }
+    },
+    "core_periphery": {
+      "hub_node": 0,
+      "stats": {
+        "mean_cascade_size": 8.03125,
+        "cascade_rate": 1.0,
+        "cascade_size_distribution": [
+          7.0,
+          6.0,
+          6.0,
+          8.0,
+          6.0,
+          13.0,
+          9.0,
+          6.0,
+          10.0,
+          13.0,
+          8.0,
+          7.0,
+          7.0,
+          9.0,
+          6.0,
+          6.0,
+          9.0,
+          9.0,
+          6.0,
+          7.0,
+          10.0,
+          7.0,
+          8.0,
+          13.0,
+          2.0,
+          8.0,
+          11.0,
+          10.0,
+          8.0,
+          7.0,
+          7.0,
+          8.0
+        ],
+        "mean_first_default_time": 8.762645721435547
+      }
+    },
+    "erdos_renyi": {
+      "hub_node": 4,
+      "stats": {
+        "mean_cascade_size": 8.25,
+        "cascade_rate": 1.0,
+        "cascade_size_distribution": [
+          9.0,
+          10.0,
+          11.0,
+          14.0,
+          7.0,
+          6.0,
+          12.0,
+          8.0,
+          7.0,
+          6.0,
+          8.0,
+          6.0,
+          6.0,
+          9.0,
+          9.0,
+          10.0,
+          6.0,
+          14.0,
+          10.0,
+          5.0,
+          4.0,
+          7.0,
+          10.0,
+          11.0,
+          10.0,
+          9.0,
+          3.0,
+          7.0,
+          8.0,
+          5.0,
+          9.0,
+          8.0
+        ],
+        "mean_first_default_time": 8.617424011230469
+      }
+    }
+  },
+  "experiment_2_controlled": {
+    "homogeneous": {
+      "uncontrolled": {
+        "hub_node": 0,
+        "stats": {
+          "mean_cascade_size": 8.375,
+          "cascade_rate": 1.0,
+          "cascade_size_distribution": [
+            11.0,
+            4.0,
+            7.0,
+            9.0,
+            9.0,
+            9.0,
+            6.0,
+            8.0,
+            5.0,
+            9.0,
+            6.0,
+            7.0,
+            8.0,
+            10.0,
+            13.0,
+            8.0,
+            7.0,
+            12.0,
+            6.0,
+            12.0,
+            7.0,
+            8.0,
+            10.0,
+            7.0,
+            8.0,
+            5.0,
+            13.0,
+            6.0,
+            12.0,
+            10.0,
+            8.0,
+            8.0
+          ],
+          "mean_first_default_time": 9.257462501525879
+        }
+      },
+      "controlled": {
+        "hub_node": 0,
+        "stats": {
+          "mean_cascade_size": 8.125,
+          "cascade_rate": 1.0,
+          "cascade_size_distribution": [
+            8.0,
+            4.0,
+            6.0,
+            6.0,
+            8.0,
+            6.0,
+            11.0,
+            8.0,
+            9.0,
+            8.0,
+            13.0,
+            8.0,
+            9.0,
+            7.0,
+            11.0,
+            11.0,
+            4.0,
+            6.0,
+            8.0,
+            9.0,
+            8.0,
+            13.0,
+            8.0,
+            8.0,
+            12.0,
+            5.0,
+            8.0,
+            10.0,
+            7.0,
+            4.0,
+            10.0,
+            7.0
+          ],
+          "mean_first_default_time": 8.934615135192871
+        }
+      },
+      "cascade_reduction": 0.0
+    },
+    "core_periphery": {
+      "uncontrolled": {
+        "hub_node": 0,
+        "stats": {
+          "mean_cascade_size": 8.375,
+          "cascade_rate": 1.0,
+          "cascade_size_distribution": [
+            9.0,
+            12.0,
+            4.0,
+            12.0,
+            7.0,
+            11.0,
+            7.0,
+            11.0,
+            6.0,
+            8.0,
+            8.0,
+            11.0,
+            5.0,
+            10.0,
+            11.0,
+            7.0,
+            13.0,
+            9.0,
+            5.0,
+            12.0,
+            12.0,
+            4.0,
+            11.0,
+            3.0,
+            7.0,
+            9.0,
+            5.0,
+            9.0,
+            4.0,
+            8.0,
+            7.0,
+            11.0
+          ],
+          "mean_first_default_time": 8.70522403717041
+        }
+      },
+      "controlled": {
+        "hub_node": 0,
+        "stats": {
+          "mean_cascade_size": 8.03125,
+          "cascade_rate": 1.0,
+          "cascade_size_distribution": [
+            7.0,
+            12.0,
+            5.0,
+            5.0,
+            10.0,
+            4.0,
+            8.0,
+            7.0,
+            12.0,
+            7.0,
+            3.0,
+            5.0,
+            7.0,
+            5.0,
+            6.0,
+            6.0,
+            9.0,
+            4.0,
+            7.0,
+            10.0,
+            12.0,
+            6.0,
+            12.0,
+            14.0,
+            8.0,
+            9.0,
+            11.0,
+            10.0,
+            9.0,
+            9.0,
+            12.0,
+            6.0
+          ],
+          "mean_first_default_time": 8.357976913452148
+        }
+      },
+      "cascade_reduction": 0.0
+    },
+    "erdos_renyi": {
+      "uncontrolled": {
+        "hub_node": 4,
+        "stats": {
+          "mean_cascade_size": 8.09375,
+          "cascade_rate": 1.0,
+          "cascade_size_distribution": [
+            11.0,
+            8.0,
+            12.0,
+            9.0,
+            5.0,
+            7.0,
+            8.0,
+            7.0,
+            6.0,
+            4.0,
+            8.0,
+            9.0,
+            7.0,
+            7.0,
+            12.0,
+            7.0,
+            8.0,
+            6.0,
+            10.0,
+            8.0,
+            10.0,
+            8.0,
+            8.0,
+            7.0,
+            5.0,
+            10.0,
+            11.0,
+            4.0,
+            12.0,
+            7.0,
+            8.0,
+            10.0
+          ],
+          "mean_first_default_time": 8.903474807739258
+        }
+      },
+      "controlled": {
+        "hub_node": 4,
+        "stats": {
+          "mean_cascade_size": 7.625,
+          "cascade_rate": 1.0,
+          "cascade_size_distribution": [
+            5.0,
+            10.0,
+            6.0,
+            8.0,
+            7.0,
+            3.0,
+            8.0,
+            12.0,
+            12.0,
+            8.0,
+            7.0,
+            5.0,
+            10.0,
+            7.0,
+            4.0,
+            9.0,
+            4.0,
+            9.0,
+            5.0,
+            11.0,
+            11.0,
+            4.0,
+            7.0,
+            4.0,
+            5.0,
+            11.0,
+            10.0,
+            10.0,
+            9.0,
+            8.0,
+            8.0,
+            7.0
+          ],
+          "mean_first_default_time": 8.565573692321777
+        }
+      },
+      "cascade_reduction": 0.0
+    },
+    "mismatch_vs_homogeneous": {
+      "core_periphery": 0.0,
+      "erdos_renyi": 0.0
+    }
+  },
+  "experiment_3_limit_breakdown": {
+    "vs_N": [
+      {
+        "N": 10,
+        "topologies": {
+          "homogeneous": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0,
+            "controlled_proxy_cost": 0.31437704533338545
+          },
+          "core_periphery": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0,
+            "controlled_proxy_cost": 0.3205124297738075
+          },
+          "erdos_renyi": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0,
+            "controlled_proxy_cost": 0.292572183907032
+          }
+        }
+      },
+      {
+        "N": 30,
+        "topologies": {
+          "homogeneous": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0,
+            "controlled_proxy_cost": 0.2704677754640579
+          },
+          "core_periphery": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0,
+            "controlled_proxy_cost": 0.29548497378826144
+          },
+          "erdos_renyi": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0,
+            "controlled_proxy_cost": 0.2819836887717247
+          }
+        }
+      }
+    ],
+    "vs_q": [
+      {
+        "q": 0.6,
+        "topologies": {
+          "homogeneous": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0
+          },
+          "core_periphery": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0
+          },
+          "erdos_renyi": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0
+          }
+        }
+      },
+      {
+        "q": 0.8,
+        "topologies": {
+          "homogeneous": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0
+          },
+          "core_periphery": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0
+          },
+          "erdos_renyi": {
+            "uncontrolled_cascade_rate": 1.0,
+            "controlled_cascade_rate": 1.0
+          }
+        }
+      }
+    ]
+  }
+}

@@ -12,6 +12,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from mfnn_control import (
+    ABMConfig,
     EncoderConfig,
     SystemicRiskConfig,
     Table28PrepProfile,
@@ -19,7 +20,11 @@ from mfnn_control import (
     build_algorithm_6_networks,
     build_policy,
     case_variance,
+    core_periphery_graph_weights,
+    erdos_renyi_graph_weights,
     estimate_critical_q,
+    homogeneous_graph_weights,
+    rollout_abm,
     run_algorithm_6_step,
     run_training_step,
     sample_initial_states_with_dim,
@@ -111,6 +116,35 @@ class TrainingTests(unittest.TestCase):
         self.assertEqual(profile.state_dim, 2)
         self.assertIn("profile", schema)
         self.assertIn("run_grid", schema)
+
+
+class ABMTests(unittest.TestCase):
+    def test_homogeneous_graph_rows_sum_to_one(self) -> None:
+        weights = homogeneous_graph_weights(agents=6)
+        self.assertEqual(weights.shape, (6, 6))
+        self.assertTrue(torch.allclose(weights.sum(dim=1), torch.ones(6), atol=1e-6, rtol=1e-6))
+
+    def test_core_periphery_graph_rows_sum_to_one(self) -> None:
+        weights = core_periphery_graph_weights(agents=8, hubs=2)
+        self.assertEqual(weights.shape, (8, 8))
+        self.assertTrue(torch.allclose(weights.sum(dim=1), torch.ones(8), atol=1e-6, rtol=1e-6))
+
+    def test_erdos_renyi_graph_rows_sum_to_one(self) -> None:
+        weights = erdos_renyi_graph_weights(agents=10, edge_probability=0.3, seed=11)
+        self.assertEqual(weights.shape, (10, 10))
+        self.assertTrue(torch.allclose(weights.sum(dim=1), torch.ones(10), atol=1e-6, rtol=1e-6))
+
+    def test_rollout_abm_with_policy_has_expected_shapes(self) -> None:
+        torch.manual_seed(3)
+        policy = build_policy(EncoderConfig(kind="cylindrical"), TrainingConfig(iterations=1, batch_size=2))
+        config = ABMConfig(steps=5, state_dim=1)
+        initial_states = torch.randn(2, 12, 1)
+        weights = homogeneous_graph_weights(agents=12)
+        result = rollout_abm(initial_states, config, weights, policy=policy)
+        self.assertEqual(result.states.shape, (6, 2, 12, 1))
+        self.assertEqual(result.actions.shape, (5, 2, 12, 1))
+        self.assertEqual(result.defaulted.shape, (2, 12))
+        self.assertEqual(result.new_defaults_per_step.shape, (5, 2))
 
 
 if __name__ == "__main__":
