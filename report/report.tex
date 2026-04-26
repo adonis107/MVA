@@ -51,9 +51,11 @@ This project aims to address what happens when a policy learned under the mean-f
 Our contributions are: (i) a faithful implementation of Algorithms 1 (global DP) and 6 (global BSDE) with both encoders, validated against the Riccati benchmark on all six initial distributions; (ii) an empirical characterisation of the MF-limit breakdown as $N$ grows from 10 to 1000 across three topologies; (iii) a phase-transition analysis quantifying the policy-induced shift $\Delta q^* > 0$ in the critical coupling; and (iv) an out-of-distribution robustness evaluation of the frozen policy on unseen initial laws and heterogeneous graphs.
 
 % ==============================================================================
-% SECTION : PAPER OVERVIEW
+% SECTION : METHODOLOGY
 % ==============================================================================
-\section{Paper Overview}
+\section{Methodology}
+
+\subsection{Mean-Field Control and MFNN Approximation}
 
 \citet{pham2024mfnn} address the numerical solution of McKean-Vlasov control (MKV) problems, which arise as the cooperative mean-field limit of $N$-agent stochastic systems. The controlled state evolves as
 \begin{equation}\label{eq:mkv-sde-main}
@@ -65,33 +67,44 @@ and the social planner minimises
 \end{equation}
 The fundamental difficulty is representational: both $v$ and the optimal feedback $\alpha^*(t, x, \mu)$ are defined on $\PPP_2(\RR^d)$, making standard finite-dimensional networks inapplicable. From the perspective of the Interactions course, \eqref{eq:mkv-sde-main} is precisely the continuum limit of an IPS: under propagation of chaos \citep{sznitman1991propagation}, the $N$-particle system decouples as $N \to \infty$, with each agent governed by a nonlinear SDE whose coefficients depend self-consistently on the law of its own solution.
 
-\textbf{Mean-field neural network architectures.} The paper introduces two architectures that lift standard feedforward networks to measure-valued inputs. The \emph{bin-density encoder} discretises $\mu$ on a fixed grid $\mathcal{K}$ into $K$ bins, producing a normalised histogram $p^\mu \in \RR^K$; the policy network is $\Phi_\theta(t, x, p^\mu)$. The \emph{cylindrical encoder} computes a learnable moment embedding
+The paper introduces two architectures that lift standard feedforward networks to measure-valued inputs. The \emph{bin-density encoder} discretises $\mu$ on a fixed grid $\mathcal{K}$ into $K$ bins, producing a normalised histogram $p^\mu \in \RR^K$; the policy network is $\Phi_\theta(t, x, p^\mu)$. The \emph{cylindrical encoder} computes a learnable moment embedding
 \begin{equation}\label{eq:cylindrical-main}
   z = \frac{1}{N}\sum_{n=1}^N \varphi_\theta(X^{(n)}) \in \RR^q
 \end{equation}
-via an inner network $\varphi_\theta$, passed to an outer network $\Psi_\theta(t, x, z)$. Both are permutation-invariant and satisfy a universal approximation theorem on $\PPP_2(\RR^d)$.
-
-\textbf{Training algorithms.} The paper proposes eight algorithms in two families. Algorithm 1 (global Dynamic Programming) minimises $\hat{J}(\theta)$ end-to-end by differentiating through the Euler simulation of \eqref{eq:mkv-sde-main}. Algorithms 4-8 exploit the FBSDE characterisation derived from the Pontryagin maximum principle: setting $Y_t = V(t, X_t, \PP_{X_t})$ (the value function along the optimal trajectory) and $Z_t = \sigma^\top \partial_x V(t, X_t, \PP_{X_t})$, the backward equation reads
+via an inner network $\varphi_\theta$, passed to an outer network $\Psi_\theta(t, x, z)$. Both are permutation-invariant and satisfy a universal approximation theorem on $\PPP_2(\RR^d)$. Algorithm 1 (global DP) minimises $\hat{J}(\theta)$ end-to-end by differentiating through the Euler simulation of \eqref{eq:mkv-sde-main}. Algorithm 6 (global BSDE) exploits the FBSDE characterisation: setting $Y_t = V(t, X_t, \PP_{X_t})$ and $Z_t = \sigma^\top \partial_x V(t, X_t, \PP_{X_t})$, the backward equation reads
 \begin{equation}\label{eq:bsde-main}
   \dd Y_t = -f(X_t, \PP_{X_t}, \alpha^*_t)\,\dd t + Z_t\,\dd W_t, \qquad Y_T = g(X_T, \PP_{X_T}),
 \end{equation}
-and the control is recovered via the adjoint $P_t = \mathcal{U}(t, X_t, \PP_{X_t}) = \partial_x V + \EE_{\xi \sim \PP_{X_t}}[\partial_\mu V(\cdot)(X_t)]$ as $\alpha^* = \hat{a}(X_t, \PP_{X_t}, P_t)$. Algorithm 6 (global BSDE) learns $(Y, Z)$ jointly over all time steps by minimising the terminal residual $\EE[\|Y_T - g(X_T, \PP_{X_T})\|^2]$.
+and learns $(Y, Z)$ jointly by minimising $\EE[\|Y_T - g(X_T, \PP_{X_T})\|^2]$, recovering the control via the adjoint $P_t = \partial_x V + \EE_{\xi \sim \PP_{X_t}}[\partial_\mu V(\cdot)(X_t)]$ as $\alpha^* = \hat{a}(X_t, \PP_{X_t}, P_t)$. We focus on Algorithms 1 and 6 because they are the canonical global-scope representatives of each family, avoiding the compounding errors of sequential variants, and the paper reports them as the most accurate on the 1D benchmark.
 
-We focus on Algorithms 1 and 6 because they are the canonical representatives of their respective families at global scope: both train a single network over all time steps simultaneously, avoiding the compounding errors of the sequential (local) variants. Algorithm 1 is the simplest baseline and stress-tests the DP approach; Algorithm 6 provides the BSDE alternative grounded in the Pontryagin principle. The paper itself reports that these two are the most accurate algorithms on the 1D systemic risk benchmark, and their structural symmetry (same training scope, different optimality characterisation) makes the comparison informative.
-
-\textbf{Systemic risk benchmark.} Validation uses the LQ systemic risk model of \citet{carmona2015systemic}: the log-monetary reserve of a representative bank satisfies
+The LQ systemic risk model of \citet{carmona2015systemic} serves as the primary benchmark: the log-monetary reserve of a representative bank satisfies
 \begin{equation}\label{eq:systemic-main}
   \dd X_t = \bigl(\kappa(\EE[X_t] - X_t) + \alpha_t\bigr)\,\dd t + \sigma\,\dd W_t,
 \end{equation}
-with cost $\tilde{f}(x,\bar x, a) = \tfrac{1}{2}a^2 - qa(\bar x - x) + \tfrac{\eta}{2}(\bar x - x)^2$ and terminal cost $\tilde{g}(x,\bar x) = \tfrac{c}{2}(x - \bar x)^2$. This model is chosen to be relevant on three counts: (i) it is an IPS with all-to-all coupling whose MF limit is \eqref{eq:systemic-main}; (ii) the finite-$N$ system produces cascading defaults, an emergent phenomenon invisible in the smooth MF cost; and (iii) the LQ structure admits an exact Riccati solution $v(t,\mu) = Q_t \int(x-\bar\mu)^2\,\mu(\dd x) + \sigma^2\int_t^T Q_s\,\dd s$, providing ground-truth for validation.
+with cost $\tilde{f}(x,\bar x, a) = \tfrac{1}{2}a^2 - qa(\bar x - x) + \tfrac{\eta}{2}(\bar x - x)^2$ and terminal cost $\tilde{g}(x,\bar x) = \tfrac{c}{2}(x - \bar x)^2$. The LQ structure admits an exact Riccati solution $v(t,\mu) = Q_t \int(x-\bar\mu)^2\,\mu(\dd x) + \sigma^2\int_t^T Q_s\,\dd s$, providing a ground-truth benchmark against which the MFNN outputs are validated.
 
+\subsection{Graphon Heterogeneity}
 
+The homogeneous formulation \eqref{eq:systemic-main} corresponds to a complete interaction graph. To introduce structural heterogeneity, we replace it with a \emph{graphon} $G:[0,1]^2 \to [0,1]$ \citep{lovasz2012large}: each agent $i$ carries a label $u_i = i/N$, and the local empirical measure seen by agent $i$ is the graphon-weighted average
+\begin{equation}\label{eq:local-measure}
+  \hat\mu_t^{i,N} = \frac{\sum_{j=1}^N G(u_i,u_j)\,\delta_{X_t^{j,N}}}{\sum_{j=1}^N G(u_i,u_j)}.
+\end{equation}
+As $N\to\infty$, \citet{coppini2025graphon} establish propagation of chaos for this system: agents with distinct labels decouple, each governed by \eqref{eq:mkv-sde-main} with $\PP_{X_t}$ replaced by the graphon-weighted law $\mu_t^u = \int_0^1 G(u,v)\PP_{X_t^v}\dd v \,/\, \int_0^1 G(u,v)\dd v$. \citet{decrescenzo2025mfc} then derive the dynamic programming principle for the associated MFC problem, with value function living in $L^2_\lambda(\PPP_2(\RR^d))$.
 
-% ==============================================================================
-% SECTION : METHODOLOGY
-% ==============================================================================
-\section{Methodology}
+We instantiate this framework with a core-periphery block graphon: the $N$ agents are partitioned into $N_c$ hub agents (labels $u < p$) and $N - N_c$ peripheral agents, with intra-core weight $q_{cc}$, cross weight $q_{cp}$, and intra-periphery weight $q_{pp}$, satisfying $q_{cc} > q_{cp} > q_{pp}$. This captures the stylised structure of real financial networks, where a small set of systemically important institutions is tightly interconnected. We also test an Erdős-Rényi random graph with edge probability $p_{\mathrm{ER}}$, which provides a disordered sparse baseline.
 
+\subsection{Agent-Based Model and Stress Testing}
+
+The mean-field policy trained on \eqref{eq:systemic-main} is deployed on a finite $N$-agent ABM with discrete-time Euler dynamics and graphon-structured interactions. At each step, agent $i$ queries the frozen MFNN with its local empirical mean $\sum_j G(u_i, u_j) X_t^{j,N} / \sum_j G(u_i, u_j)$ as the measure encoding, receives a control action $\alpha_t^i$, and updates its state. An agent defaults when its reserve crosses a threshold $\theta_{\mathrm{def}}$; subsequent steps fix it at $\theta_{\mathrm{def}}$, propagating the loss through the interaction weights to solvent neighbours. The cascade rate and mean cascade size are measured over $M$ Monte Carlo paths.
+
+Four experiments probe the limits of the MF approximation:
+\begin{enumerate}
+  \item \textbf{Uncontrolled baseline.} Cascade statistics ($\alpha \equiv 0$) across topologies, establishing the unmitigated risk profile.
+  \item \textbf{Policy effectiveness.} Controlled vs.\ uncontrolled cascade rates and sizes at the calibrated interaction strength $q^*$, quantifying the reduction achieved by the MF policy on finite heterogeneous networks.
+  \item \textbf{Mean-field limit breakdown.} Cascade rate and proxy cost as $N \in \{10, 30, 100, 300, 1000\}$, isolating the finite-$N$ correction and its dependence on topology.
+  \item \textbf{Phase transition and emergence.} A sweep of the inter-bank coupling $q$ from subcritical to supercritical regimes identifies the critical threshold $q^*$ as the inflection point of the cascade-rate curve. Near $q^*$, cascade-size distributions follow a power law (checked on a log-log scale), confirming proximity to a continuous phase transition. The policy-induced shift $\Delta q^* = q^*_{\mathrm{controlled}} - q^*_{\mathrm{uncontrolled}}$ quantifies the stabilisation effect.
+\end{enumerate}
+A robustness experiment additionally evaluates the frozen policy on Cases 2 and 3 (out-of-distribution initial laws) and across all three topologies simultaneously, probing generalisation along both the measure and graph-structure dimensions.
 
 
 % ==============================================================================
