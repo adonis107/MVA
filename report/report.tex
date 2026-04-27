@@ -7,6 +7,7 @@
 \usepackage{booktabs}
 \usepackage[numbers]{natbib}
 \usepackage{float}
+\usepackage{hyperref}
 
 \usepackage{algorithm}
 \usepackage{algorithmicx}
@@ -28,16 +29,21 @@ Fotios KAPOTOS \email{fotiskapotos@gmail.com}
 
 \date{April 2026}
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% ABSTRACT
-%%%%%%%%%%%%%%%%%%%%%%%
-
 
 % ==============================================================================
 % ================================== DOCUMENT ==================================  
 % ==============================================================================
 \begin{document}
 \maketitle
+
+
+% ==============================================================================
+% ABSTRACT 
+% ==============================================================================
+\begin{abstract}
+  \url{https://github.com/adonis107/MVA_INT}
+\end{abstract}
+
 
 % ==============================================================================
 % SECTION : INTRODUCTION AND CONTRIBUTIONS
@@ -112,6 +118,27 @@ A robustness experiment additionally evaluates the frozen policy on Cases 2 and 
 % ==============================================================================
 \section{Data and Experimental Setup}
 
+\subsection{MFNN Training: Benchmark Reproduction}
+
+All training runs use the systemic risk parameters $\kappa = 0.6$, $\sigma = 1.0$, $q = 0.8$, $\eta = 2.0$, $c = 2.0$, $T = 0.2$ from \citet{pham2024mfnn}. The time horizon is discretised into $N_T = 20$ Euler steps, giving $\Delta t = 0.01$. Each training iteration samples a batch of $B = 16$ initial particle clouds of size $N = 128$ from one of the six benchmark distributions (Cases 1-6; see Appendix~\ref{sec:appendix-systemic}), and optimises with Adam at learning rate $10^{-3}$ for 200 iterations. Experiments are run with two seeds (7 and 9) to assess variance. Policy networks use two hidden layers of width 64 with tanh activations. The bin-density encoder uses $K = 33$ bins over the support $[-2.0, 2.0]$; the cylindrical encoder projects to a latent dimension $q = 16$ via an inner network of the same depth. Checkpoints are saved after training and reloaded for ABM evaluation without any fine-tuning.
+
+The trained policy is evaluated by simulating the forward particle system under the learned feedback control and computing the empirical cost $\hat{J}(\theta)$. This is compared against the analytical Riccati value $v(0, \mu_0)$ for each of the six initial distributions. A relative error below 5\% is the acceptance threshold.
+
+\subsection{ABM Simulation Setup}
+
+The ABM simulations share the same physical parameters as the training regime: $\sigma = 1.0$, $T = 0.2$, $N_T = 20$ steps, default threshold $\theta_{\mathrm{def}} = -0.5$, and the Case~1 initial distribution $X_0 \sim \mathcal{N}(0, 0.2^2)$. The interaction strength $q_{\mathrm{ABM}}$ is calibrated per topology by a grid sweep over $q \in [0.1, 1.4]$ (14 uniformly spaced values): the value at which the uncontrolled cascade rate on a 100-agent system is closest to a target of 35\% is selected as the operating point. This calibration is run independently for each topology.
+
+Three topologies are tested with $N = 100$ agents:
+\begin{itemize}
+  \item \textbf{Homogeneous:} uniform graphon $G \equiv 1/N$; recovers the MF all-to-all coupling.
+  \item \textbf{Core-periphery:} 10 hub nodes fully connected to each other and to all peripheral nodes; peripheral nodes connected only to hubs. Row-normalised adjacency; $q_{cc} > q_{cp} \gg q_{pp}$ structure.
+  \item \textbf{Erdős-Rényi:} random symmetric graph with edge probability $p_{\mathrm{ER}} = 0.08$. Self-loops added to prevent isolated nodes.
+\end{itemize}
+In all cases the highest-degree node receives an initial shock of $\theta_{\mathrm{def}} - 0.2$ to trigger a cascade, and cascade statistics are estimated over $M = 1000$ Monte Carlo paths.
+
+\subsection{Phase Transition Sweep}
+
+The phase transition experiment sweeps $q \in [0.0, 2.0]$ in 21 uniformly spaced steps. To isolate the emergent phenomenon from the distributional details of training, a dedicated clean regime is used: $\sigma_{\mathrm{phase}} = 0.1$, initial mean $= 0.5$ (all agents well above threshold), $\theta_{\mathrm{phase}} = 0.0$, $T = 1.0$, $N_T = 100$ steps, with 10\% of agents shocked to $-5.0$ at $t = 0$. The cascade rate and mean cascade size are recorded at each $q$ value. The critical coupling $q^*$ is defined as the first $q$ at which the cascade rate crosses 50\%, computed separately for the controlled and uncontrolled systems. Log-log histograms of cascade-size distributions are computed at three representative coupling values (subcritical, near-critical, supercritical) to test for power-law tails. The mean-field limit breakdown experiment varies $N \in \{10, 30, 100, 300, 1000\}$ at five fixed interaction strengths $q \in \{0.4, 0.6, 0.8, 1.0, 1.2\}$, tracking both cascade rate and a proxy cost $\hat{C} = \sum_t \sum_i (\alpha_t^i)^2 \Delta t / (NM) + \text{cascade rate}$.
 
 
 % ==============================================================================
