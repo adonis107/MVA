@@ -146,6 +146,87 @@ The phase transition experiment sweeps $q \in [0.0, 2.0]$ in 21 uniformly spaced
 % ==============================================================================
 \section{Results}
 
+\subsection{Benchmark Validation}
+
+Algorithms~1 and~6 are trained on Cases~1--3, both encoders, and two seeds (24 runs total), evaluated against the Riccati analytical values. Results are summarised in Table~\ref{tab:benchmark-validation}. The cylindrical encoder achieves a 100\% success rate (relative error below 5\%) for both algorithms, with mean absolute error $\bar\epsilon = 7\times10^{-4}$ (Algorithm~1) and $4.2\times10^{-3}$ (Algorithm~6). The bin-density encoder reaches 67\%, with failures concentrated on Cases~2 and~3: the fixed grid $[-2, 2]$ misrepresents the shifted support of Case~2 ($\mu = 0.3$) and the tightly concentrated Case~3 ($\sigma = 0.05$), consistent with the support-sensitivity caveat of \citet{pham2024mfnn}. On Case~1, Algorithm~1 with bins converges to cost $0.1135$ against the analytic $0.1134$ (Figure~\ref{fig:baseline-training}), a relative error of $0.09\%$; Algorithm~6 reaches an induced cost of $0.1666$ against $0.1642$. Both algorithms complete in under 15\,s per run, with Algorithm~6 requiring $0.1$\,MB peak memory against $24.8$\,MB for Algorithm~1, owing to the BSDE formulation avoiding full trajectory storage.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{llcc}
+    \toprule
+    Algorithm & Encoder & Mean $|\hat J - v|$ & Within 5\% \\
+    \midrule
+    Algorithm 1 (global DP)   & bins         & $4.9 \times 10^{-3}$ & 67\% \\
+    Algorithm 1 (global DP)   & cylindrical  & $7.0 \times 10^{-4}$ & 100\% \\
+    Algorithm 6 (global BSDE) & bins         & $4.6 \times 10^{-3}$ & 67\% \\
+    Algorithm 6 (global BSDE) & cylindrical  & $4.2 \times 10^{-3}$ & 100\% \\
+    \bottomrule
+  \end{tabular}
+  \caption{Benchmark validation across Cases~1--3 (2 seeds). The cylindrical encoder achieves 100\% pass rate; the bin encoder fails on Cases~2 and~3 due to support mismatch with the fixed grid.}
+  \label{tab:benchmark-validation}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.48\linewidth]{../results/figures/baseline/baseline_algorithm1_training.png}
+  \hfill
+  \includegraphics[width=0.48\linewidth]{../results/figures/baseline/baseline_algorithm6_training.png}
+  \caption{Training curves for Algorithm~1 (left) and Algorithm~6 (right), Case~1, bin encoder. The dashed line marks the Riccati analytical value $v = 0.1642$.}
+  \label{fig:baseline-training}
+\end{figure}
+
+\subsection{ABM Experiments}
+
+\paragraph{Uncontrolled baseline.}
+The calibration sweep over $q \in [0.1, 1.5]$ yields a cascade rate of $1.0$ at every tested value for all three topologies, indicating that the chosen ABM parameters ($\sigma = 0.5$, $T = 0.5$, Case~1 initial law) place the system deep in the supercritical regime. The operating point is therefore set to $q_{\mathrm{ABM}} = 0.1$, the minimum tested. Under this regime, a single hub-node shock triggers full-system cascades with mean sizes $18.2$, $18.0$, and $18.5$ additional defaults per path on the homogeneous, core-periphery, and Erdős-Rényi topologies, respectively. The near-identical statistics across topologies confirm that at $N = 100$ and strong coupling, cascade size is determined by global dynamics rather than local network structure.
+
+\paragraph{Policy effectiveness.}
+Deploying the frozen Algorithm~1 (bin encoder, Case~1, seed~7) policy leaves the cascade rate at $\approx 1.0$ across all topologies: the hub shock is too large to be absorbed, and propagation is always triggered. However, the mean cascade size is reduced by 58\% on the homogeneous topology ($17.6 \to 7.4$ defaults), 46\% on core-periphery ($18.2 \to 9.8$), and 50\% on Erdős-Rényi ($18.0 \to 9.0$), as shown in Figure~\ref{fig:abm-exp2}. The larger residual size under core-periphery heterogeneity reflects a systematic mismatch: hub nodes observe a local weighted mean that overestimates the population mean, biasing the MF policy toward greater borrowing and amplifying downstream losses.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/abm/abm_exp2_policy_effectiveness.png}
+  \caption{Policy effectiveness at $N = 100$. Mean cascade size (left) and absolute reduction (right) across topologies. The homogeneous topology benefits most from the MF policy.}
+  \label{fig:abm-exp2}
+\end{figure}
+
+\paragraph{Mean-field limit breakdown.}
+Figure~\ref{fig:abm-exp3} traces cascade statistics as $N$ grows from 10 to 1000 at five fixed coupling values. At $N = 10$, the policy reduces the cascade rate from $0.86$ to $0.61$ on the homogeneous and core-periphery topologies, confirming that the MF approximation is useful at small population sizes. As $N$ increases, both controlled and uncontrolled cascade rates saturate to $1.0$; the policy benefit is then expressed entirely in cascade size. At $N = 1000$, the controlled mean cascade size is $70.1$ against an uncontrolled $180.4$ on the homogeneous topology (61\% reduction) and $98.3$ against $183.1$ on core-periphery (46\%). The core-periphery controlled size persistently and substantially exceeds the homogeneous and Erdős-Rényi controlled sizes at all $N$, confirming that graphon heterogeneity degrades MF policy performance in a topology-dependent manner. Across all coupling values in $\{0.4, 0.6, 0.8, 1.0, 1.2\}$, the controlled cascade size decreases monotonically in $q$: stronger mean-reverting coupling amplifies the corrective force of the policy, accelerating reserve restoration for solvent agents.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/abm/abm_exp3_limit_breakdown.png}
+  \caption{Mean-field limit breakdown. Left: mean cascade size vs population size $N$ at $q = 0.8$. Right: mean cascade size vs coupling $q$ at $N = 1000$. Solid lines: uncontrolled; dashed: controlled.}
+  \label{fig:abm-exp3}
+\end{figure}
+
+\paragraph{Phase transition.}
+Figure~\ref{fig:abm-exp4} presents the phase transition experiment under the clean regime ($\sigma = 0.1$, $T = 1.0$, 10\% of agents shocked to $-5.0$). On the homogeneous topology, the uncontrolled system exhibits a sharp transition at $q^*_{\mathrm{unc}} = 0.9$, with the cascade rate rising from $14\%$ at $q = 0.6$ to $40\%$ at $q = 0.8$, $68\%$ at $q = 0.9$, and saturating above $q = 1.2$. The MF policy delays this transition substantially: the controlled cascade rate remains below $2\%$ for all $q \leq 1.0$ and crosses the 50\% threshold only at $q^*_{\mathrm{ctl}} \approx 2.0$, yielding a policy-induced shift $\Delta q^* \approx 1.1$. Log-log cascade-size histograms (Figure~\ref{fig:abm-loglog}) confirm power-law-like tails in the uncontrolled near-critical regime ($q = 0.9$); the controlled distributions at the same $q$ show near-total suppression, with the heavy tail collapsing to isolated single-default events. The two heterogeneous topologies present qualitatively different behaviours: the Erdős-Rényi system is already supercritical at $q = 0.2$ ($q^*_{\mathrm{unc}} = 0.2$) and the control provides no stabilisation in the phase transition regime, reflecting the high effective connectivity of the random graph under $p_{\mathrm{ER}} = 0.08$. The core-periphery graphon, conversely, produces near-zero cascade rates across the entire $q \in [0, 2]$ range under both controlled and uncontrolled dynamics, which follows from the topological insulation of peripheral agents: the 10\% initial shock does not reach the dense core-periphery interface at sufficient amplitude to trigger secondary defaults.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/abm/abm_exp4_phase_transition.png}
+  \caption{Phase transition experiment. Cascade rate (left) and mean cascade size (right) vs inter-bank coupling $q$. Vertical lines mark the critical coupling $q^*_{\mathrm{unc}} = 0.9$ (dotted) and $q^*_{\mathrm{ctl}} \approx 2.0$ (dash-dot) for the homogeneous topology.}
+  \label{fig:abm-exp4}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/abm/abm_exp4_loglog_distributions_easy.png}
+  \caption{Log-log cascade-size distributions on the homogeneous topology at subcritical ($q = 0.8$), near-critical ($q = 0.9$), and supercritical ($q = 1.1$) coupling. Top row: uncontrolled; bottom row: controlled. The controlled distribution is vacuous at sub- and near-critical $q$.}
+  \label{fig:abm-loglog}
+\end{figure}
+
+\subsection{Policy Robustness}
+
+Figure~\ref{fig:abm-robustness} evaluates the Case~1-trained policy on out-of-distribution initial laws (Cases~2 and~3). On Case~2 ($X_0 = 0.3 + 0.05Y$, banks initialised well above the default threshold), the policy achieves cascade rate reductions of $0.79$, $0.67$, and $0.71$ on the homogeneous, core-periphery, and Erdős-Rényi topologies, respectively, with a consistent mean cascade size reduction of $1.7$ additional defaults. On Cases~1 and~3 (initial mean at 0), the rate reduction is negligible ($\leq 0.006$) because the system is deep in the supercritical regime regardless of control, but cascade sizes are reduced by $7$--$11$ defaults. This asymmetry pinpoints the operating envelope of the MF policy: it is effective at stabilisation when agents are initialised away from the default boundary (Case~2), but cannot suppress cascades when the initial law places mass near the critical region. Importantly, even for the out-of-distribution Case~2 law, the policy generalises nontrivially across all three topologies, suggesting that the cylindrical representation captures distributional features beyond the specific training measure.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/abm/abm_policy_robustness.png}
+  \caption{Policy robustness. Cascade rate reduction (left) and mean cascade size reduction (right) for the Case~1-trained policy deployed on Cases~1--3 across topologies. The policy generalises strongly to Case~2 (high initial mean) but not to Cases~1 and~3 (initial mean near 0).}
+  \label{fig:abm-robustness}
+\end{figure}
 
 
 % ==============================================================================
@@ -153,6 +234,11 @@ The phase transition experiment sweeps $q \in [0.0, 2.0]$ in 21 uniformly spaced
 % ==============================================================================
 \section{Conclusion and Discussion}
 
+This project studied the deployment of mean-field neural network policies, trained under the homogeneous MKV hypothesis, on finite heterogeneous agent systems with graphon-structured interactions. The implementation reproduces Algorithms~1 and~6 of \citet{pham2024mfnn} at benchmark accuracy: the cylindrical encoder achieves 100\% pass rate across Cases~1--3 with mean absolute error below $5\times10^{-3}$, while the bin encoder degrades on distributions whose support lies outside the fixed grid, confirming the support-sensitivity known from the paper. The BSDE formulation (Algorithm~6) reduces peak memory by two orders of magnitude relative to Algorithm~1, at a slight cost in accuracy on difficult cases.
+
+The ABM experiments reveal consistent patterns: the frozen MF policy substantially reduces cascade severity (mean size halved at $N = 100$) without eliminating cascades entirely when the system operates well above the critical coupling. The residual damage is topology-dependent and not attributable to finite-$N$ corrections alone. Under core-periphery graphon structure, hub nodes receive a biased local mean that systematically overestimates the population average, inducing excess borrowing and degrading the policy by roughly 12 percentage points relative to the homogeneous baseline. The Erdős-Rényi topology, while matching homogeneous performance on average cascade sizes, exhibits a far lower critical coupling ($q^* = 0.2$ vs $0.9$), making the system's phase behaviour qualitatively different: the policy provides no phase-transition stabilisation in the sparse random graph regime. The policy-induced shift $\Delta q^* \approx 1.1$ on the homogeneous topology quantifies the stabilisation effect as a genuine increase in the system's resilience margin. Near-critical power-law tails in cascade-size distributions are suppressed by the control, providing evidence that the policy shifts the system away from the critical manifold rather than merely rescaling individual cascade sizes.
+
+Two limitations bound the scope of these conclusions. First, the policy was trained under $G \equiv 1$ and deployed zero-shot on heterogeneous graphs; a label-conditioned extension of the encoder (concatenating $u$ to the network input, as sketched in Appendix~\ref{sec:appendix-formulation}) would allow co-training under the graphon MKV formulation of \citet{decrescenzo2026mfc} and would likely close the 12-point gap observed on core-periphery topologies. Second, the ABM calibration placed the system deep in the supercritical regime for all tested coupling values, preventing a direct comparison of cascade rates between controlled and uncontrolled systems; a finer parameter sweep at lower $\sigma$ or smaller initial shock would expose the rate-reduction capability of the policy in the subcritical neighbourhood of $q^*$. Both extensions constitute natural next steps for a full solution of the heterogeneous MFC problem studied here.
 
 
 % ==============================================================================
