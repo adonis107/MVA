@@ -6,6 +6,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +26,88 @@ from mfnn_control import (
     rollout_abm,
     sample_initial_states_with_dim,
 )
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap CI utilities
+# ---------------------------------------------------------------------------
+
+def bootstrap_ci(
+    samples: list[float],
+    n_boot: int = 1000,
+    alpha: float = 0.05,
+    stat: str = "mean",
+    seed: int = 0,
+) -> tuple[float, float]:
+    """Percentile bootstrap CI.  stat='mean' | 'rate' (fraction > 0)."""
+    rng = np.random.default_rng(seed)
+    arr = np.asarray(samples, dtype=float)
+    if len(arr) < 2:
+        v = float(arr.mean()) if stat == "mean" else float((arr > 0).mean())
+        return v, v
+    if stat == "mean":
+        boots = rng.choice(arr, size=(n_boot, len(arr)), replace=True).mean(axis=1)
+    elif stat == "rate":
+        boots = (rng.choice(arr, size=(n_boot, len(arr)), replace=True) > 0).mean(axis=1)
+    else:
+        raise ValueError(f"Unknown stat '{stat}'. Use 'mean' or 'rate'.")
+    lo = float(np.percentile(boots, 100 * alpha / 2))
+    hi = float(np.percentile(boots, 100 * (1 - alpha / 2)))
+    return lo, hi
+
+
+def add_cascade_ci(stats_dict: dict, n_boot: int = 1000, seed: int = 0) -> dict:
+    """Augment a cascade_stats dict in-place with 95% bootstrap CIs."""
+    dist = stats_dict.get("cascade_size_distribution", [])
+    if len(dist) < 2:
+        stats_dict["cascade_rate_ci"] = [stats_dict["cascade_rate"]] * 2
+        stats_dict["mean_cascade_size_ci"] = [stats_dict["mean_cascade_size"]] * 2
+        return stats_dict
+    rate_lo, rate_hi = bootstrap_ci(dist, n_boot=n_boot, stat="rate", seed=seed)
+    size_lo, size_hi = bootstrap_ci(dist, n_boot=n_boot, stat="mean", seed=seed)
+    stats_dict["cascade_rate_ci"] = [rate_lo, rate_hi]
+    stats_dict["mean_cascade_size_ci"] = [size_lo, size_hi]
+    return stats_dict
+
+
+# ---------------------------------------------------------------------------
+# Power-law MLE
+# ---------------------------------------------------------------------------
+
+def fit_discrete_powerlaw_mle(
+    sizes: list[float],
+    x_min: int = 1,
+) -> dict[str, float | int]:
+    """MLE for discrete power law P(X=k) ~ k^{-alpha}, k >= x_min.
+
+    Uses the Clauset, Shalizi, Newman (2009) formula for discrete distributions
+    (Eq. B.4). Also performs a KS test against an exponential null.
+    """
+    from scipy.stats import kstest
+
+    data = np.asarray([s for s in sizes if s >= x_min], dtype=float)
+    n = len(data)
+    if n < 5:
+        return {"alpha": float("nan"), "se": float("nan"), "n": n, "x_min": x_min,
+                "ks_stat": float("nan"), "ks_p": float("nan"), "exp_lambda": float("nan")}
+    # Clauset et al. (2009) discrete MLE
+    alpha_hat = 1.0 + n / float(np.sum(np.log(data / (x_min - 0.5))))
+    se = (alpha_hat - 1.0) / (n ** 0.5)
+    # KS test: compare empirical data to exponential distribution with MLE lambda
+    lam_hat = 1.0 / float(data.mean() - x_min + 1)
+    ks_stat, ks_p = kstest(
+        data - x_min,
+        lambda x: 1.0 - np.exp(-lam_hat * x),
+    )
+    return {
+        "alpha": float(alpha_hat),
+        "se": float(se),
+        "n": int(n),
+        "x_min": int(x_min),
+        "ks_stat": float(ks_stat),
+        "ks_p": float(ks_p),
+        "exp_lambda": float(lam_hat),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -147,6 +230,7 @@ def run_rollout(
     initial_defaulted = (x0 < abm_config.default_threshold).any(dim=-1)
     sim = rollout_abm(x0, abm_config, weights, policy=policy)
     stats = cascade_stats(sim, abm_config.default_threshold, initial_defaulted)
+    add_cascade_ci(stats)
     return {
         "hub_node": node,
         "stats": stats,
@@ -268,13 +352,27 @@ def experiment_3_limit_breakdown(
             base_count = initial_defaulted.float().sum(dim=1)
             unc_additional = (unc_final - base_count).clamp_min(0.0)
             ctl_additional = (ctl_final - base_count).clamp_min(0.0)
-            n_item["topologies"][name] = {
+            unc_dist = [float(v) for v in unc_additional.cpu().tolist()]
+            ctl_dist = [float(v) for v in ctl_additional.cpu().tolist()]
+            unc_stats: dict = {
                 "uncontrolled_cascade_rate": float((unc_additional > 0).float().mean().item()),
                 "controlled_cascade_rate": float((ctl_additional > 0).float().mean().item()),
                 "uncontrolled_mean_cascade_size": float(unc_additional.mean().item()),
                 "controlled_mean_cascade_size": float(ctl_additional.mean().item()),
                 "controlled_proxy_cost": policy_proxy_cost(ctl, base_config.dt),
+                "uncontrolled_cascade_size_distribution": unc_dist,
+                "controlled_cascade_size_distribution": ctl_dist,
             }
+            # bootstrap CIs
+            u_lo, u_hi = bootstrap_ci(unc_dist, stat="mean")
+            c_lo, c_hi = bootstrap_ci(ctl_dist, stat="mean")
+            ur_lo, ur_hi = bootstrap_ci(unc_dist, stat="rate")
+            cr_lo, cr_hi = bootstrap_ci(ctl_dist, stat="rate")
+            unc_stats["uncontrolled_mean_cascade_size_ci"] = [u_lo, u_hi]
+            unc_stats["controlled_mean_cascade_size_ci"] = [c_lo, c_hi]
+            unc_stats["uncontrolled_cascade_rate_ci"] = [ur_lo, ur_hi]
+            unc_stats["controlled_cascade_rate_ci"] = [cr_lo, cr_hi]
+            n_item["topologies"][name] = unc_stats
         by_n.append(n_item)
 
     by_q = []
@@ -300,12 +398,19 @@ def experiment_3_limit_breakdown(
             base_count = initial_defaulted.float().sum(dim=1)
             unc_additional = (unc_final - base_count).clamp_min(0.0)
             ctl_additional = (ctl_final - base_count).clamp_min(0.0)
-            q_item["topologies"][name] = {
+            unc_dist_q = [float(v) for v in unc_additional.cpu().tolist()]
+            ctl_dist_q = [float(v) for v in ctl_additional.cpu().tolist()]
+            q_row: dict = {
                 "uncontrolled_cascade_rate": float((unc_additional > 0).float().mean().item()),
                 "controlled_cascade_rate": float((ctl_additional > 0).float().mean().item()),
                 "uncontrolled_mean_cascade_size": float(unc_additional.mean().item()),
                 "controlled_mean_cascade_size": float(ctl_additional.mean().item()),
             }
+            qu_lo, qu_hi = bootstrap_ci(unc_dist_q, stat="mean")
+            qc_lo, qc_hi = bootstrap_ci(ctl_dist_q, stat="mean")
+            q_row["uncontrolled_mean_cascade_size_ci"] = [qu_lo, qu_hi]
+            q_row["controlled_mean_cascade_size_ci"] = [qc_lo, qc_hi]
+            q_item["topologies"][name] = q_row
         by_q.append(q_item)
     return {"vs_N": by_n, "vs_q": by_q}
 
@@ -440,6 +545,57 @@ def experiment_5_subcritical_rate_comparison(
     return results
 
 
+def experiment_wasserstein_convergence(
+    base_config: ABMConfig,
+    n_grid: list[int],
+    case: str,
+    mc_paths: int,
+    state_dim: int,
+    device: str,
+    policy: torch.nn.Module,
+) -> list[dict]:
+    """Compute W1(empirical_N, empirical_N_ref) for each N on the homogeneous topology.
+
+    Uses N_ref = max(n_grid) (i.e. N=1000) as proxy for the MF limit, following
+    Fournier & Guillin (2015). The expected rate in d=1 is O(N^{-1/2}).
+    """
+    try:
+        from scipy.stats import wasserstein_distance as w1_distance
+    except ImportError:
+        return []
+
+    n_ref = n_grid[-1]
+    ref_weights = homogeneous_graph_weights(n_ref, device=device)
+    torch.manual_seed(42)
+    x0_ref = sample_initial(case, mc_paths, n_ref, state_dim, device)
+    x0_ref = apply_initial_shock(x0_ref, [highest_degree_node(ref_weights)], base_config.default_threshold - 0.2)
+
+    ref_unc = rollout_abm(x0_ref, base_config, ref_weights, policy=None)
+    ref_ctl = rollout_abm(x0_ref, base_config, ref_weights, policy=policy)
+    ref_unc_flat = ref_unc.states[-1, :, :, 0].cpu().numpy().flatten()
+    ref_ctl_flat = ref_ctl.states[-1, :, :, 0].cpu().numpy().flatten()
+
+    results = []
+    for n in n_grid:
+        if n == n_ref:
+            results.append({"N": n, "w1_uncontrolled": 0.0, "w1_controlled": 0.0})
+            continue
+        w_n = homogeneous_graph_weights(n, device=device)
+        torch.manual_seed(n)
+        x0_n = sample_initial(case, mc_paths, n, state_dim, device)
+        x0_n = apply_initial_shock(x0_n, [highest_degree_node(w_n)], base_config.default_threshold - 0.2)
+        sim_unc = rollout_abm(x0_n, base_config, w_n, policy=None)
+        sim_ctl = rollout_abm(x0_n, base_config, w_n, policy=policy)
+        unc_flat = sim_unc.states[-1, :, :, 0].cpu().numpy().flatten()
+        ctl_flat = sim_ctl.states[-1, :, :, 0].cpu().numpy().flatten()
+        results.append({
+            "N": n,
+            "w1_uncontrolled": float(w1_distance(unc_flat, ref_unc_flat)),
+            "w1_controlled": float(w1_distance(ctl_flat, ref_ctl_flat)),
+        })
+    return results
+
+
 def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
     torch.manual_seed(args.seed)
     device = args.device
@@ -539,6 +695,15 @@ def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
         device,
         policy,
     )
+    exp_wasserstein = experiment_wasserstein_convergence(
+        calibrated_config,
+        _to_int_list(args.n_grid),
+        args.case,
+        args.mc_paths,
+        args.state_dim,
+        device,
+        policy,
+    )
     return {
         "config": {
             "args": vars(args),
@@ -551,6 +716,7 @@ def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
         "experiment_3_limit_breakdown": exp3,
         "experiment_4_phase_transition": exp4,
         "experiment_5_subcritical_rate_comparison": exp5,
+        "experiment_wasserstein_convergence": exp_wasserstein,
     }
 
 
