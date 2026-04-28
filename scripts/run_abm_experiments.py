@@ -59,6 +59,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--phase-steps", type=int, default=100)
     parser.add_argument("--phase-stress-fraction", type=float, default=0.1)
     parser.add_argument("--phase-stress-value", type=float, default=-5.0)
+    parser.add_argument("--subcrit-sigmas", default="0.2,0.5,1.0")
+    parser.add_argument("--subcrit-q-min", type=float, default=0.2)
+    parser.add_argument("--subcrit-q-max", type=float, default=2.0)
+    parser.add_argument("--subcrit-q-steps", type=int, default=19)
     return parser.parse_args()
 
 
@@ -373,6 +377,69 @@ def experiment_4_phase_transition(
     return results_by_topology
 
 
+def experiment_5_subcritical_rate_comparison(
+    base_config: ABMConfig,
+    sigma_values: list[float],
+    q_sweep: list[float],
+    agents: int,
+    case: str,
+    mc_paths: int,
+    state_dim: int,
+    device: str,
+    policy: torch.nn.Module,
+) -> list[dict[str, object]]:
+    """Sweep sigma x q to expose policy rate-reduction in sub/near-critical regime."""
+    weights = homogeneous_graph_weights(agents, device=device)
+    hub = highest_degree_node(weights)
+    results = []
+    for sigma in sigma_values:
+        cfg_base = ABMConfig(
+            horizon=base_config.horizon,
+            steps=base_config.steps,
+            sigma=sigma,
+            interaction_q=q_sweep[0],
+            state_dim=state_dim,
+            default_threshold=base_config.default_threshold,
+        )
+        q_rows = []
+        for q in q_sweep:
+            cfg = ABMConfig(
+                horizon=cfg_base.horizon,
+                steps=cfg_base.steps,
+                sigma=sigma,
+                interaction_q=q,
+                state_dim=state_dim,
+                default_threshold=cfg_base.default_threshold,
+            )
+            x0 = sample_initial(case, mc_paths, agents, state_dim, device)
+            x0 = apply_initial_shock(x0, [hub], cfg.default_threshold - 0.2)
+            initial_defaulted = (x0 < cfg.default_threshold).any(dim=-1)
+            unc = rollout_abm(x0, cfg, weights, policy=None)
+            ctl = rollout_abm(x0, cfg, weights, policy=policy)
+            unc_add = (unc.defaulted.float().sum(dim=1) - initial_defaulted.float().sum(dim=1)).clamp_min(0.0)
+            ctl_add = (ctl.defaulted.float().sum(dim=1) - initial_defaulted.float().sum(dim=1)).clamp_min(0.0)
+            u_rate = float((unc_add > 0).float().mean().item())
+            c_rate = float((ctl_add > 0).float().mean().item())
+            q_rows.append({
+                "q": float(q),
+                "uncontrolled_cascade_rate": u_rate,
+                "controlled_cascade_rate": c_rate,
+                "uncontrolled_mean_cascade_size": float(unc_add.mean().item()),
+                "controlled_mean_cascade_size": float(ctl_add.mean().item()),
+                "rate_reduction": float(u_rate - c_rate),
+            })
+        # identify critical q as first q where uncontrolled rate >= 0.5
+        cq_unc = next((row["q"] for row in q_rows if row["uncontrolled_cascade_rate"] >= 0.5), None)
+        cq_ctl = next((row["q"] for row in q_rows if row["controlled_cascade_rate"] >= 0.5), None)
+        results.append({
+            "sigma": float(sigma),
+            "q_sweep": q_rows,
+            "critical_q_uncontrolled": cq_unc,
+            "critical_q_controlled": cq_ctl,
+        })
+    return results
+
+
 def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
     torch.manual_seed(args.seed)
     device = args.device
@@ -460,6 +527,18 @@ def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
         phase_stress_fraction=args.phase_stress_fraction,
         phase_stress_value=args.phase_stress_value,
     )
+    subcrit_q_sweep = torch.linspace(args.subcrit_q_min, args.subcrit_q_max, args.subcrit_q_steps).tolist()
+    exp5 = experiment_5_subcritical_rate_comparison(
+        calibrated_config,
+        _to_float_list(args.subcrit_sigmas),
+        subcrit_q_sweep,
+        args.agents,
+        args.case,
+        args.mc_paths,
+        args.state_dim,
+        device,
+        policy,
+    )
     return {
         "config": {
             "args": vars(args),
@@ -471,6 +550,7 @@ def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
         "experiment_2_controlled": exp2,
         "experiment_3_limit_breakdown": exp3,
         "experiment_4_phase_transition": exp4,
+        "experiment_5_subcritical_rate_comparison": exp5,
     }
 
 
