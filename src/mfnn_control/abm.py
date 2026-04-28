@@ -35,6 +35,96 @@ def _row_normalize(adjacency: Tensor) -> Tensor:
     return adjacency / row_sums
 
 
+def degree_centrality_from_weights(weights: Tensor) -> Tensor:
+    """Compute normalized degree centrality from row-stochastic weight matrix.
+    
+    For a row-stochastic matrix W, the degree (non-zero count per row) is normalized
+    by the maximum possible degree (number of agents - 1). For fully connected graphs,
+    this gives uniform centrality. For sparse graphs (e.g., core-periphery), this
+    captures the heterogeneity in connectivity.
+    
+    Args:
+        weights: Row-stochastic adjacency matrix of shape (N, N) or (B, N, N).
+    
+    Returns:
+        Normalized centrality scores in [0, 1], shape (N,) or (B, N).
+    """
+    if weights.ndim == 2:
+        N = weights.shape[0]
+        binary = (weights > 0).to(weights.dtype)
+        degrees = binary.sum(dim=1) - 1  # Exclude self-loop
+        max_degree = max(1.0, float(N - 1))
+        centrality = degrees / max_degree
+        return centrality.clamp(0.0, 1.0)
+    elif weights.ndim == 3:
+        B, N, _ = weights.shape
+        binary = (weights > 0).to(weights.dtype)
+        degrees = binary.sum(dim=2) - 1  # Exclude self-loops
+        max_degree = max(1.0, float(N - 1))
+        centrality = degrees / max_degree
+        return centrality.clamp(0.0, 1.0)
+    else:
+        raise ValueError(f"weights must have ndim=2 or 3, got {weights.ndim}")
+
+
+class CentralityHeuristicPolicy(torch.nn.Module):
+    """Heuristic policy that scales Mean Field control by agent degree centrality.
+    
+    This baseline computes control actions from a Mean Field policy and then scales
+    each agent's action by their normalized degree centrality. This captures the
+    intuition that more central agents (with more neighbors) benefit more from control.
+    """
+    
+    def __init__(self, mf_policy: MeanFieldPolicy, weights: Tensor):
+        """Initialize heuristic policy.
+        
+        Args:
+            mf_policy: Mean Field policy to wrap.
+            weights: Row-stochastic adjacency matrix of shape (N, N) or (B, N, N).
+        """
+        super().__init__()
+        self.mf_policy = mf_policy
+        self.register_buffer("centrality", degree_centrality_from_weights(weights))
+    
+    def forward(self, *args, **kwargs):
+        """Forward pass (not used; actions computed in rollout)."""
+        raise NotImplementedError("Use compute_actions() for ABM integration.")
+    
+    def compute_actions(self, time: float | Tensor, states: Tensor, weights: Tensor) -> Tensor:
+        """Compute heuristic actions by scaling Mean Field policy by centrality.
+        
+        Args:
+            time: Time value or tensor.
+            states: States of shape (B, N, state_dim).
+            weights: Batched weights of shape (B, N, N).
+        
+        Returns:
+            Scaled actions of shape (B, N, state_dim).
+        """
+        batch_size, agents, state_dim = states.shape
+        features = weighted_encoder_features(self.mf_policy, states, weights)
+        
+        if not torch.is_tensor(time):
+            time = torch.tensor(time, device=states.device, dtype=states.dtype)
+        if time.ndim == 0:
+            time = time.repeat(batch_size)
+        if time.ndim == 1:
+            time = time.unsqueeze(-1)
+        
+        time_tensor = time.unsqueeze(1).expand(batch_size, agents, 1)
+        inputs = torch.cat((time_tensor, states, features), dim=-1)
+        
+        mf_actions = self.mf_policy.network(inputs)
+        
+        centrality = self.centrality
+        if centrality.ndim == 1:
+            centrality = centrality.unsqueeze(0).unsqueeze(-1).expand(batch_size, agents, 1)
+        elif centrality.ndim == 2:
+            centrality = centrality.unsqueeze(-1).expand(batch_size, agents, 1)
+        
+        return mf_actions * centrality
+
+
 def homogeneous_graph_weights(
     agents: int,
     *,

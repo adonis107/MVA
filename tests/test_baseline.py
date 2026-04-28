@@ -64,6 +64,7 @@ class TrainingTests(unittest.TestCase):
     def test_paper_case_variances_match_expected_equalities(self) -> None:
         self.assertAlmostEqual(case_variance("case_1"), case_variance("case_4"), places=6)
         self.assertAlmostEqual(case_variance("case_2"), case_variance("case_3"), places=6)
+        self.assertAlmostEqual(case_variance("case_5"), 0.0725, places=6)
 
     def test_single_training_step_returns_finite_loss(self) -> None:
         config = SystemicRiskConfig(steps=6, particles=24)

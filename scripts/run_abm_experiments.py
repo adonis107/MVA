@@ -16,12 +16,17 @@ if str(SRC) not in sys.path:
 
 from mfnn_control import (
     ABMConfig,
+    ABMSimulationResult,
+    CentralityHeuristicPolicy,
     EncoderConfig,
     TrainingConfig,
     apply_initial_shock,
     build_policy,
     core_periphery_graph_weights,
+    default_mask,
     erdos_renyi_graph_weights,
+    euler_step,
+    expand_graph_weights,
     homogeneous_graph_weights,
     rollout_abm,
     sample_initial_states_with_dim,
@@ -135,11 +140,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--phase-q-min", type=float, default=0.0)
     parser.add_argument("--phase-q-max", type=float, default=2.0)
     parser.add_argument("--phase-q-steps", type=int, default=21)
-    parser.add_argument("--phase-sigma", type=float, default=0.1)
+    parser.add_argument("--phase-sigma", type=float, default=1.0)
     parser.add_argument("--phase-threshold", type=float, default=0.0)
     parser.add_argument("--phase-initial-mean", type=float, default=0.5)
-    parser.add_argument("--phase-horizon", type=float, default=1.0)
-    parser.add_argument("--phase-steps", type=int, default=100)
+    parser.add_argument("--phase-horizon", type=float, default=0.2)
+    parser.add_argument("--phase-steps", type=int, default=20)
     parser.add_argument("--phase-stress-fraction", type=float, default=0.1)
     parser.add_argument("--phase-stress-value", type=float, default=-5.0)
     parser.add_argument("--subcrit-sigmas", default="0.2,0.5,1.0")
@@ -296,15 +301,72 @@ def experiment_2_controlled(
     for name, weights in topologies.items():
         uncontrolled = run_rollout(abm_config, weights, case, mc_paths, state_dim, device, policy=None)
         controlled = run_rollout(abm_config, weights, case, mc_paths, state_dim, device, policy=policy)
+        
+        # Heuristic baseline: scale control by degree centrality
+        heuristic_policy = CentralityHeuristicPolicy(policy, weights).to(device=device)
+        
+        # Custom rollout for heuristic that uses compute_actions
+        x0 = sample_initial(case, mc_paths, weights.shape[0], state_dim, device)
+        node = highest_degree_node(weights)
+        x0 = apply_initial_shock(x0, [node], abm_config.default_threshold - 0.2)
+        initial_defaulted = (x0 < abm_config.default_threshold).any(dim=-1)
+        
+        batch_size, agents, _ = x0.shape
+        batched_weights = expand_graph_weights(weights, batch_size)
+        noise = torch.randn(
+            abm_config.steps,
+            batch_size,
+            agents,
+            state_dim,
+            device=x0.device,
+            dtype=x0.dtype,
+        )
+        states = [x0]
+        actions_history = []
+        current = x0
+        defaulted = default_mask(current, abm_config.default_threshold)
+        new_defaults = []
+        for step in range(abm_config.steps):
+            time = step * abm_config.dt
+            with torch.inference_mode():
+                actions = heuristic_policy.compute_actions(time, current, batched_weights)
+            next_states = euler_step(current, abm_config, batched_weights, actions=actions, noise=noise[step])
+            states.append(next_states)
+            actions_history.append(actions)
+            new_def = default_mask(next_states, abm_config.default_threshold) & (~defaulted)
+            new_defaults.append(new_def)
+            defaulted = defaulted | new_def
+            current = next_states
+        
+        states_tensor = torch.stack(states, dim=0)
+        actions_tensor = torch.stack(actions_history, dim=0)
+        new_defaults_tensor = torch.stack(new_defaults, dim=0)
+        from mfnn_control import ABMSimulationResult
+        heuristic_sim = ABMSimulationResult(
+            states=states_tensor,
+            actions=actions_tensor,
+            defaulted=defaulted,
+            new_defaults_per_step=new_defaults_tensor,
+        )
+        heuristic_result = cascade_stats(heuristic_sim, abm_config.default_threshold, initial_defaulted)
+        add_cascade_ci(heuristic_result)
+        heuristic = {"hub_node": node, "stats": heuristic_result}
+        
         u_rate = float(uncontrolled["stats"]["cascade_rate"])
         c_rate = float(controlled["stats"]["cascade_rate"])
+        h_rate = float(heuristic["stats"]["cascade_rate"])
         u_size = float(uncontrolled["stats"]["mean_cascade_size"])
         c_size = float(controlled["stats"]["mean_cascade_size"])
+        h_size = float(heuristic["stats"]["mean_cascade_size"])
+        
         out[name] = {
             "uncontrolled": uncontrolled,
             "controlled": controlled,
+            "heuristic": heuristic,
             "cascade_reduction": float(u_rate - c_rate),
             "cascade_size_reduction": float(u_size - c_size),
+            "heuristic_cascade_reduction": float(u_rate - h_rate),
+            "heuristic_cascade_size_reduction": float(u_size - h_size),
         }
     base_rate = out["homogeneous"]["cascade_reduction"]
     base_size = out["homogeneous"]["cascade_size_reduction"]
@@ -312,6 +374,15 @@ def experiment_2_controlled(
         k: {
             "rate": float(base_rate - out[k]["cascade_reduction"]),
             "size": float(base_size - out[k]["cascade_size_reduction"]),
+        }
+        for k in ("core_periphery", "erdos_renyi")
+    }
+    heuristic_base_rate = out["homogeneous"]["heuristic_cascade_reduction"]
+    heuristic_base_size = out["homogeneous"]["heuristic_cascade_size_reduction"]
+    out["heuristic_mismatch_vs_homogeneous"] = {
+        k: {
+            "rate": float(heuristic_base_rate - out[k]["heuristic_cascade_reduction"]),
+            "size": float(heuristic_base_size - out[k]["heuristic_cascade_size_reduction"]),
         }
         for k in ("core_periphery", "erdos_renyi")
     }
@@ -425,11 +496,11 @@ def experiment_4_phase_transition(
     device: str,
     policy: torch.nn.Module,
     topologies: dict[str, torch.Tensor],
-    phase_sigma: float = 0.1,
+    phase_sigma: float = 1.0,
     phase_threshold: float = 0.0,
     phase_initial_mean: float = 0.5,
-    phase_horizon: float = 1.0,
-    phase_steps: int = 100,
+    phase_horizon: float = 0.2,
+    phase_steps: int = 20,
     phase_stress_fraction: float = 0.1,
     phase_stress_value: float = -5.0,
 ) -> dict[str, object]:

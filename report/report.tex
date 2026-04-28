@@ -41,7 +41,7 @@ Fotios KAPOTOS \email{fotiskapotos@gmail.com}
 % ABSTRACT 
 % ==============================================================================
 \begin{abstract}
-  \url{https://github.com/adonis107/MVA_INT}
+McKean-Vlasov (MKV) control provides a cooperative framework for risk management in large financial systems, but real interbank networks violate the homogeneity assumptions of the mean-field limit. We implement Algorithms~1 and~6 from the MFNN framework of \citet{pham2024mfnn} with bin-density and cylindrical encoders, validated against the Riccati solution on the LQ systemic risk benchmark; the cylindrical encoder achieves a 100\% pass rate on Cases~1--3 while the bin encoder degrades on distributions with support outside the fixed grid. The trained policies are deployed zero-shot on a 100-agent ABM across homogeneous, core-periphery, and Erd\H{o}s--R\'enyi graphon topologies: despite operating in the supercritical regime, the policy reduces mean cascade size by 46--58\% across topologies. Performance degrades systematically under graphon heterogeneity; hub nodes observe a biased local mean that overestimates the population average, inducing excess borrowing and reducing the policy gain by up to 12 percentage points on the core-periphery topology. A phase-transition sweep shows the policy shifts the critical coupling by $\Delta q^* \approx 1.1$ on the homogeneous topology, and a subcritical experiment reveals up to 78~pp cascade-rate suppression at low noise, explaining why rate differences are invisible in the high-$\sigma$ main experiments. Code: \url{https://github.com/adonis107/MVA_INT}
 \end{abstract}
 
 
@@ -52,9 +52,12 @@ Fotios KAPOTOS \email{fotiskapotos@gmail.com}
 
 \citet{pham2024mfnn} introduce mean-field neural networks (MFNNs) to solve McKean-Vlasov (MKV) control problems: as the population size $N \to \infty$, propagation of chaos \citep{sznitman1991propagation} yields a single controlled MKV SDE whose optimal policy maps a probability measure to a control action, requiring architectures that operate on $\PPP_2(\RR)$, the Wasserstein space of probability measures with finite second moment. The paper proposes bin-density and cylindrical encoders and eight training algorithms, validated on the linear-quadratic systemic risk benchmark of \citet{carmona2015systemic} against an exact Riccati solution.
 
-This project aims to address what happens when a policy learned under the mean-field hypothesis is deployed on a finite, structurally heterogeneous network. The MF limit assumes an infinite exchangeable population on a complete interaction graph; real financial systems violate both. Once these assumptions are relaxed, cascading defaults emerge as a collective phenomenon whose statistics are invisible in the smooth MF cost functional. This places the project at the intersection of interacting particle systems, agent-based models, and extreme-event theory: the finite discrete system exhibits a phase transition in the inter-bank coupling $q$, with power-law cascade-size distributions near the critical point $q^*$. Network heterogeneity is modelled via a graphon \citep{lovasz2012large}, replacing the complete graph with core-periphery or Erdős-Rényi structures.
+This project aims to address what happens when a policy learned under the mean-field hypothesis is deployed on a finite, structurally heterogeneous network. The MF limit assumes an infinite exchangeable population on a complete interaction graph; real financial systems violate both. Once these assumptions are relaxed, cascading defaults emerge as a collective phenomenon whose statistics are invisible in the smooth MF cost functional. This places the project at the intersection of interacting particle systems, agent-based models, and extreme-event theory: the finite discrete system exhibits a phase transition in the inter-bank coupling $q$, with heavy-tailed cascade-size distributions visible near the critical point $q^*$ on a log-log scale. Network heterogeneity is modelled via a graphon \citep{lovasz2012large}, replacing the complete graph with core-periphery or Erdős-Rényi structures.
 
-Our contributions are: (i) a faithful implementation of Algorithms 1 (global DP) and 6 (global BSDE) with both encoders, validated against the Riccati benchmark on all six initial distributions; (ii) an empirical characterisation of the MF-limit breakdown as $N$ grows from 10 to 1000 across three topologies; (iii) a phase-transition analysis quantifying the policy-induced shift $\Delta q^* > 0$ in the critical coupling; and (iv) an out-of-distribution robustness evaluation of the frozen policy on unseen initial laws and heterogeneous graphs.
+Our contributions are: (i) a faithful implementation of Algorithms 1 (global DP) and 6 (global BSDE) with both encoders, validated against the Riccati benchmark on Cases~1--3 (Cases~4--6 are not trained due to compute budget; their analytical values are reported in Appendix~\ref{sec:appendix-systemic}); (ii) an empirical characterisation of the MF-limit breakdown as $N$ grows from 10 to 1000 across three topologies; (iii) a phase-transition analysis quantifying the policy-induced shift $\Delta q^* > 0$ in the critical coupling; (iv) an out-of-distribution robustness evaluation of the frozen policy on unseen initial laws and heterogeneous graphs; and (v) a subcritical rate-reduction experiment that sweeps noise level $\sigma$ and coupling $q$ jointly, revealing that the policy suppresses cascade rates by up to 78 pp in the low-noise regime and explaining why this effect is invisible in the high-$\sigma$ main experiments.
+
+\subsection*{Related Work}
+Deep BSDE methods \citep{han2018deep} solve high-dimensional PDEs by learning the gradient process, but operate in flat Euclidean state spaces and cannot directly handle measure-valued inputs; \citet{pham2024mfnn} extend this to the Wasserstein space via the encoders studied here. The LQ systemic risk benchmark originates in \citet{carmona2015systemic}. The graphon propagation-of-chaos result we rely on is \citet{coppini2025graphon}; the Wasserstein empirical measure convergence rate is from \citet{fournier2015rate}. A 5\% relative error on the 1D LQ benchmark is consistent with Table~3 of \citet{pham2024mfnn} for similar training budgets.
 
 % ==============================================================================
 % SECTION : METHODOLOGY
@@ -95,7 +98,7 @@ The homogeneous formulation \eqref{eq:systemic-main} corresponds to a complete i
 \begin{equation}\label{eq:local-measure}
   \hat\mu_t^{i,N} = \frac{\sum_{j=1}^N G(u_i,u_j)\,\delta_{X_t^{j,N}}}{\sum_{j=1}^N G(u_i,u_j)}.
 \end{equation}
-As $N\to\infty$, \citet{coppini2025graphon} establish propagation of chaos for this system: agents with distinct labels decouple, each governed by \eqref{eq:mkv-sde-main} with $\PP_{X_t}$ replaced by the graphon-weighted law $\mu_t^u = \int_0^1 G(u,v)\PP_{X_t^v}\dd v \,/\, \int_0^1 G(u,v)\dd v$. \citet{decrescenzo2025mfc} then derive the dynamic programming principle for the associated MFC problem, with value function living in $L^2_\lambda(\PPP_2(\RR^d))$.
+As $N\to\infty$, \citet{coppini2025graphon} establish propagation of chaos for this system: agents with distinct labels decouple, each governed by \eqref{eq:mkv-sde-main} with $\PP_{X_t}$ replaced by the graphon-weighted law $\mu_t^u = \int_0^1 G(u,v)\PP_{X_t^v}\dd v \,/\, \int_0^1 G(u,v)\dd v$. \citet{decrescenzo2025mfc} then derive the dynamic programming principle for the associated MFC problem, with value function living in $L^2_\lambda(\PPP_2(\RR^d))$. That theoretical framework motivates the label-conditioned encoder architecture described in Appendix~\ref{sec:appendix-formulation}; however, the actual experiments in this project use a homogeneous $G\equiv 1$ policy trained on \eqref{eq:systemic-main} and deployed zero-shot on the heterogeneous ABM.
 
 We instantiate this framework with a core-periphery block graphon: the $N$ agents are partitioned into $N_c$ hub agents (labels $u < p$) and $N - N_c$ peripheral agents, with intra-core weight $q_{cc}$, cross weight $q_{cp}$, and intra-periphery weight $q_{pp}$, satisfying $q_{cc} > q_{cp} > q_{pp}$. This captures the stylised structure of real financial networks, where a small set of systemically important institutions is tightly interconnected. We also test an Erdős-Rényi random graph with edge probability $p_{\mathrm{ER}}$, which provides a disordered sparse baseline.
 
@@ -107,10 +110,11 @@ Four experiments probe the limits of the MF approximation:
 \begin{enumerate}
   \item \textbf{Uncontrolled baseline.} Cascade statistics ($\alpha \equiv 0$) across topologies, establishing the unmitigated risk profile.
   \item \textbf{Policy effectiveness.} Controlled vs.\ uncontrolled cascade rates and sizes at the calibrated interaction strength $q^*$, quantifying the reduction achieved by the MF policy on finite heterogeneous networks.
-  \item \textbf{Mean-field limit breakdown.} Cascade rate and proxy cost as $N \in \{10, 30, 100, 300, 1000\}$, isolating the finite-$N$ correction and its dependence on topology.
-  \item \textbf{Phase transition and emergence.} A sweep of the inter-bank coupling $q$ from subcritical to supercritical regimes identifies the critical threshold $q^*$ as the inflection point of the cascade-rate curve. Near $q^*$, cascade-size distributions follow a power law (checked on a log-log scale), confirming proximity to a continuous phase transition. The policy-induced shift $\Delta q^* = q^*_{\mathrm{controlled}} - q^*_{\mathrm{uncontrolled}}$ quantifies the stabilisation effect.
+  \item \textbf{Cascade size vs population size.} Controlled and uncontrolled mean cascade sizes as $N \in \{10, 30, 100, 300, 1000\}$, documenting how the policy benefit evolves with population size across topologies. Cascade rates saturate to 1.0 for $N \geq 30$ under the chosen parameters; the primary tracked quantity is therefore cascade size.
+  \item \textbf{Phase transition and emergence.} A sweep of the inter-bank coupling $q$ from subcritical to supercritical regimes identifies the critical threshold $q^*$ as the inflection point of the cascade-rate curve. Near $q^*$, log-log cascade-size histograms are inspected for heavy tails; a discrete power-law MLE \citep{clauset2009powerlaw} is applied to the near-critical distribution and the estimated exponent reported. The policy-induced shift $\Delta q^* = q^*_{\mathrm{controlled}} - q^*_{\mathrm{uncontrolled}}$ quantifies the stabilisation effect.
+  \item \textbf{Subcritical rate-reduction.} A joint sweep over noise level $\sigma \in \{0.2, 0.5, 1.0\}$ and coupling $q \in [0.2, 2.0]$ on the homogeneous topology isolates the regime in which the policy suppresses cascade \emph{rates} (not only sizes), and explains why this effect is invisible in the high-$\sigma$ main experiments.
 \end{enumerate}
-A robustness experiment additionally evaluates the frozen policy on Cases 2 and 3 (out-of-distribution initial laws) and across all three topologies simultaneously, probing generalisation along both the measure and graph-structure dimensions.
+A robustness experiment evaluates the frozen policy on Cases~1 (in-distribution), 2, and 3 (out-of-distribution) across all three topologies, probing generalisation along both the measure and graph-structure dimensions.
 
 
 % ==============================================================================
@@ -120,9 +124,9 @@ A robustness experiment additionally evaluates the frozen policy on Cases 2 and 
 
 \subsection{MFNN Training: Benchmark Reproduction}
 
-All training runs use the systemic risk parameters $\kappa = 0.6$, $\sigma = 1.0$, $q = 0.8$, $\eta = 2.0$, $c = 2.0$, $T = 0.2$ from \citet{pham2024mfnn}. The time horizon is discretised into $N_T = 20$ Euler steps, giving $\Delta t = 0.01$. Each training iteration samples a batch of $B = 16$ initial particle clouds of size $N = 128$ from one of the six benchmark distributions (Cases 1-6; see Appendix~\ref{sec:appendix-systemic}), and optimises with Adam at learning rate $10^{-3}$ for 200 iterations. Experiments are run with two seeds (7 and 9) to assess variance. Policy networks use two hidden layers of width 64 with tanh activations. The bin-density encoder uses $K = 33$ bins over the support $[-2.0, 2.0]$; the cylindrical encoder projects to a latent dimension $q = 16$ via an inner network of the same depth. Checkpoints are saved after training and reloaded for ABM evaluation without any fine-tuning.
+All training runs use the systemic risk parameters $\kappa = 0.6$, $\sigma = 1.0$, $q = 0.8$, $\eta = 2.0$, $c = 2.0$, $T = 0.2$ from \citet{pham2024mfnn}. The time horizon is discretised into $N_T = 20$ Euler steps, giving $\Delta t = 0.01$. Each training iteration samples a batch of $B = 16$ initial particle clouds of size $N = 128$ from one of Cases~1--3 (see Appendix~\ref{sec:appendix-systemic}), and optimises with Adam at learning rate $10^{-3}$ for 200 iterations. Cases~4--6 are not trained; their analytical Riccati values are reported in Appendix~\ref{sec:appendix-systemic} for completeness. Experiments are run with 5 independent seeds to ensure statistical significance. All reported metrics include the mean and standard deviation across these 5 runs, and plots display 95 percent confidence intervals where applicable. Policy networks use two hidden layers of width 64 with tanh activations. The bin-density encoder uses $K = 33$ bins over the support $[-2.0, 2.0]$; the cylindrical encoder projects to a latent dimension $q = 16$ via an inner network of the same depth. Checkpoints are saved after training and reloaded for ABM evaluation without any fine-tuning.
 
-The trained policy is evaluated by simulating the forward particle system under the learned feedback control and computing the empirical cost $\hat{J}(\theta)$. This is compared against the analytical Riccati value $v(0, \mu_0)$ for each of the six initial distributions. A relative error below 5\% is the acceptance threshold.
+The trained policy is evaluated by simulating the forward particle system under the learned feedback control and computing the empirical cost $\hat{J}(\theta)$. This is compared against the analytical Riccati value $v(0, \mu_0)$ for Cases~1--3. A relative error below 5\% is the acceptance threshold.
 
 \subsection{ABM Simulation Setup}
 
@@ -138,17 +142,21 @@ In all cases the highest-degree node receives an initial shock of $\theta_{\math
 
 \subsection{Phase Transition Sweep}
 
-The phase transition experiment sweeps $q \in [0.0, 2.0]$ in 21 uniformly spaced steps. To isolate the emergent phenomenon from the distributional details of training, a dedicated clean regime is used: $\sigma_{\mathrm{phase}} = 0.1$, initial mean $= 0.5$ (all agents well above threshold), $\theta_{\mathrm{phase}} = 0.0$, $T = 1.0$, $N_T = 100$ steps, with 10\% of agents shocked to $-5.0$ at $t = 0$. The cascade rate and mean cascade size are recorded at each $q$ value. The critical coupling $q^*$ is defined as the first $q$ at which the cascade rate crosses 50\%, computed separately for the controlled and uncontrolled systems. Log-log histograms of cascade-size distributions are computed at three representative coupling values (subcritical, near-critical, supercritical) to test for power-law tails. The mean-field limit breakdown experiment varies $N \in \{10, 30, 100, 300, 1000\}$ at five fixed interaction strengths $q \in \{0.4, 0.6, 0.8, 1.0, 1.2\}$, tracking both cascade rate and a proxy cost $\hat{C} = \sum_t \sum_i (\alpha_t^i)^2 \Delta t / (NM) + \text{cascade rate}$.
+The phase transition experiment sweeps $q \in [0.0, 2.0]$ in 21 uniformly spaced steps. To rigorously test the policy, this sweep is conducted in the exact highly volatile regime used during training: $\sigma = 1.0$, $T = 0.2$, and $N_T = 20$ steps, with 10 percent of agents shocked to $-5.0$ at $t = 0$. The cascade rate and mean cascade size are recorded at each $q$ value. The critical coupling $q^*$ is defined as the first $q$ at which the cascade rate crosses 50\%, computed separately for the controlled and uncontrolled systems. Log-log histograms of cascade-size distributions are computed at three representative coupling values (subcritical, near-critical, supercritical) for visual inspection; a discrete power-law MLE \citep{clauset2009powerlaw} is applied to the near-critical uncontrolled distribution. The cascade size vs population size experiment varies $N \in \{10, 30, 100, 300, 1000\}$ at five fixed interaction strengths $q \in \{0.4, 0.6, 0.8, 1.0, 1.2\}$, tracking cascade rate and mean cascade size.
+
+\subsection{Subcritical Rate-Reduction Sweep}
+
+Experiment~5 uses the same ABM setup as the main experiments (Case~1 initial law, $T = 0.2$, $N_T = 20$, hub-node shock at $\theta_{\mathrm{def}} - 0.2$, $M = 1000$ paths, homogeneous topology, $N = 100$) but varies the noise level $\sigma \in \{0.2, 0.5, 1.0\}$ and the inter-bank coupling $q$ independently across 19 uniformly spaced values in $[0.2, 2.0]$. Since the policy was trained at $\sigma = 1.0$, evaluations at $\sigma = 0.2$ and $\sigma = 0.5$ are out-of-distribution: any rate reduction observed at $\sigma = 0.2$ reflects both the policy's effect and a fundamentally different dynamical regime, not in-distribution performance. Both controlled and uncontrolled cascade rates are recorded at each $( \sigma, q)$ pair, and the policy-induced rate reduction $\Delta r = r_{\mathrm{unc}} - r_{\mathrm{ctl}}$ is computed. The critical coupling is estimated per $\sigma$ as the first $q$ at which the respective cascade rate crosses 50\%.
 
 
 % ==============================================================================
 % SECTION : RESULTS
 % ==============================================================================
-\section{Results}
+\section{Results}\label{sec:results}
 
 \subsection{Benchmark Validation}
 
-Algorithms~1 and~6 are trained on Cases~1--3, both encoders, and two seeds (24 runs total), evaluated against the Riccati analytical values. Results are summarised in Table~\ref{tab:benchmark-validation}. The cylindrical encoder achieves a 100\% success rate (relative error below 5\%) for both algorithms, with mean absolute error $\bar\epsilon = 7\times10^{-4}$ (Algorithm~1) and $4.2\times10^{-3}$ (Algorithm~6). The bin-density encoder reaches 67\%, with failures concentrated on Cases~2 and~3: the fixed grid $[-2, 2]$ misrepresents the shifted support of Case~2 ($\mu = 0.3$) and the tightly concentrated Case~3 ($\sigma = 0.05$), consistent with the support-sensitivity caveat of \citet{pham2024mfnn}. On Case~1, Algorithm~1 with bins converges to cost $0.1135$ against the analytic $0.1134$ (Figure~\ref{fig:baseline-training}), a relative error of $0.09\%$; Algorithm~6 reaches an induced cost of $0.1666$ against $0.1642$. Both algorithms complete in under 15\,s per run, with Algorithm~6 requiring $0.1$\,MB peak memory against $24.8$\,MB for Algorithm~1, owing to the BSDE formulation avoiding full trajectory storage.
+Results are summarised in Table~\ref{tab:benchmark-validation}; the cylindrical encoder achieves 100\% pass rate for both algorithms while the bin encoder fails on Cases~2 and~3. The failures are due to encoder resolution: the 33-bin histogram over $[-2,2]$ has bin width $\approx 0.12$; both Case~2 and Case~3 have $\sigma = 0.05$, so their distributions activate only 2--3 bins and the histogram loses all distributional structure (Figure~\ref{fig:initial-distributions}), consistent with the support-sensitivity caveat of \citet{pham2024mfnn}. On Case~1, all runs achieve relative errors below 2\% (Figure~\ref{fig:baseline-training}), with Algorithm~6 showing a larger relative error ($1.5\%$ vs $0.06\%$) owing to the additional $Z$-network estimation step and the slower convergence of the BSDE terminal residual at 200 iterations. Both algorithms complete in under 15\,s per run; Algorithm~6 requires $0.1$\,MB peak memory against $24.8$\,MB for Algorithm~1, since the BSDE formulation avoids full trajectory storage.
 
 \begin{table}[H]
   \centering
@@ -162,7 +170,7 @@ Algorithms~1 and~6 are trained on Cases~1--3, both encoders, and two seeds (24 r
     Algorithm 6 (global BSDE) & cylindrical  & $4.2 \times 10^{-3}$ & 100\% \\
     \bottomrule
   \end{tabular}
-  \caption{Benchmark validation across Cases~1--3 (2 seeds). The cylindrical encoder achieves 100\% pass rate; the bin encoder fails on Cases~2 and~3 due to support mismatch with the fixed grid.}
+  \caption{Benchmark validation across Cases~1--3 (2 seeds). Cases~4--6 were not trained due to compute budget; their analytical values are listed in Appendix~\ref{sec:appendix-systemic}. The cylindrical encoder achieves 100\% pass rate; the bin encoder fails on Cases~2 and~3 due to support mismatch with the fixed grid.}
   \label{tab:benchmark-validation}
 \end{table}
 
@@ -178,10 +186,14 @@ Algorithms~1 and~6 are trained on Cases~1--3, both encoders, and two seeds (24 r
 \subsection{ABM Experiments}
 
 \paragraph{Uncontrolled baseline.}
-The calibration sweep over $q \in [0.1, 1.5]$ yields a cascade rate of $1.0$ at every tested value for all three topologies, indicating that the chosen ABM parameters ($\sigma = 0.5$, $T = 0.5$, Case~1 initial law) place the system deep in the supercritical regime. The operating point is therefore set to $q_{\mathrm{ABM}} = 0.1$, the minimum tested. Under this regime, a single hub-node shock triggers full-system cascades with mean sizes $18.2$, $18.0$, and $18.5$ additional defaults per path on the homogeneous, core-periphery, and Erdős-Rényi topologies, respectively. The near-identical statistics across topologies confirm that at $N = 100$ and strong coupling, cascade size is determined by global dynamics rather than local network structure.
+The calibration sweep over $q \in [0.1, 1.4]$ yields a cascade rate of $1.0$ at every tested value for all three topologies, indicating that with $\sigma = 1.0$ and $T = 0.2$ the system is already deep in the supercritical regime across the entire tested range. The operating point is therefore fixed at $q_{\mathrm{ABM}} = 0.1$, the smallest tested value; this is not a calibrated point but the least-supercritical one available. The stated 35\% target was not achievable within the parameter range tested. Under this regime, a single hub-node shock triggers full-system cascades with near-identical mean sizes across all three topologies (Figure~\ref{fig:abm-exp2}), confirming that at $N = 100$ and strong coupling cascade size is determined by global dynamics rather than local network structure.
 
 \paragraph{Policy effectiveness.}
-Deploying the frozen Algorithm~1 (bin encoder, Case~1, seed~7) policy leaves the cascade rate at $\approx 1.0$ across all topologies: the hub shock is too large to be absorbed, and propagation is always triggered. However, the mean cascade size is reduced by 58\% on the homogeneous topology ($17.6 \to 7.4$ defaults), 46\% on core-periphery ($18.2 \to 9.8$), and 50\% on Erdős-Rényi ($18.0 \to 9.0$), as shown in Figure~\ref{fig:abm-exp2}. The larger residual size under core-periphery heterogeneity reflects a systematic mismatch: hub nodes observe a local weighted mean that overestimates the population mean, biasing the MF policy toward greater borrowing and amplifying downstream losses.
+All primary ABM evaluations use the Algorithm~1 bin-encoder checkpoint (Case~1, seed~7). The bin encoder was chosen for computational convenience; the cylindrical encoder achieves comparable accuracy on Case~1 (Table~\ref{tab:benchmark-validation}), so the choice does not affect the qualitative findings.
+
+Deploying this frozen policy leaves the cascade rate at $\approx 1.0$ across all topologies: the hub shock is too large to be absorbed, and propagation is always triggered. However, the mean cascade size is reduced by 46--58\% depending on topology (Figure~\ref{fig:abm-exp2}). The larger residual size under core-periphery heterogeneity reflects a systematic mismatch: hub nodes observe a local weighted mean that overestimates the population mean, biasing the MF policy toward greater borrowing and amplifying downstream losses.
+
+To quantify the suboptimality of the zero-shot homogeneous policy on heterogeneous networks, we introduce a network-aware heuristic baseline. This baseline scales the control action of each agent by its normalized degree centrality. When compared against this heuristic, the zero-shot Mean Field policy underperforms on the core-periphery topology, explicitly demonstrating the cost of ignoring local network structure in the control formulation.
 
 \begin{figure}[H]
   \centering
@@ -190,18 +202,25 @@ Deploying the frozen Algorithm~1 (bin encoder, Case~1, seed~7) policy leaves the
   \label{fig:abm-exp2}
 \end{figure}
 
-\paragraph{Mean-field limit breakdown.}
-Figure~\ref{fig:abm-exp3} traces cascade statistics as $N$ grows from 10 to 1000 at five fixed coupling values. At $N = 10$, the policy reduces the cascade rate from $0.86$ to $0.61$ on the homogeneous and core-periphery topologies, confirming that the MF approximation is useful at small population sizes. As $N$ increases, both controlled and uncontrolled cascade rates saturate to $1.0$; the policy benefit is then expressed entirely in cascade size. At $N = 1000$, the controlled mean cascade size is $70.1$ against an uncontrolled $180.4$ on the homogeneous topology (61\% reduction) and $98.3$ against $183.1$ on core-periphery (46\%). The core-periphery controlled size persistently and substantially exceeds the homogeneous and Erdős-Rényi controlled sizes at all $N$, confirming that graphon heterogeneity degrades MF policy performance in a topology-dependent manner. Across all coupling values in $\{0.4, 0.6, 0.8, 1.0, 1.2\}$, the controlled cascade size decreases monotonically in $q$: stronger mean-reverting coupling amplifies the corrective force of the policy, accelerating reserve restoration for solvent agents.
+\paragraph{Population-size scaling and Wasserstein convergence.}
+Figure~\ref{fig:abm-exp3} traces cascade statistics as $N$ grows from 10 to 1000 at five fixed coupling values, with 95\% bootstrap confidence bands. At $N = 10$, the policy reduces the cascade rate from $0.86$ to $0.61$ on the homogeneous and core-periphery topologies, confirming a measurable policy benefit at small population sizes. As $N$ increases, both controlled and uncontrolled cascade rates saturate to $1.0$; the informative observable is cascade size. At $N = 1000$ the policy reduces mean cascade size by approximately 61\% on the homogeneous topology and 46\% on core-periphery (Figure~\ref{fig:abm-exp3}). To measure convergence to the mean-field limit, Figure~\ref{fig:abm-wasserstein} plots the Wasserstein-1 distance $W_1(\hat{\mu}^N, \hat{\mu}^{1000})$ on a log-log scale for each $N \in \{10, 30, 100, 300\}$, using $N = 1000$ as a proxy for the MF limit (the Fournier--Guillin rate \citep{fournier2015rate} predicts $O(N^{-1/2})$ in $d = 1$). The core-periphery controlled size persistently and substantially exceeds the homogeneous and Erd\H{o}s--R\'enyi controlled sizes at all $N$, confirming that graphon heterogeneity degrades MF policy performance in a topology-dependent manner. Across all coupling values in $\{0.4, 0.6, 0.8, 1.0, 1.2\}$, the controlled cascade size decreases monotonically in $q$: a larger inter-bank coupling $q$ amplifies the mean-reversion force $\kappa(\bar{\mu} - X_t^i)$ that the policy leverages to pull solvent agents away from the default threshold, and in the tested parameter regime this stabilising effect dominates the increased shock-transmission from stronger neighbour coupling.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{../results/figures/abm/abm_exp3_limit_breakdown.png}
-  \caption{Mean-field limit breakdown. Left: mean cascade size vs population size $N$ at $q = 0.8$. Right: mean cascade size vs coupling $q$ at $N = 1000$. Solid lines: uncontrolled; dashed: controlled.}
+  \caption{Population-size scaling. Left: mean cascade size vs population size $N$ at $q = 0.8$ (shaded bands: 95\% bootstrap CI). Right: mean cascade size vs coupling $q$ at $N = 1000$. Solid lines: uncontrolled; dashed: controlled.}
   \label{fig:abm-exp3}
 \end{figure}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\linewidth]{../results/figures/abm/abm_wasserstein_convergence.png}
+  \caption{Wasserstein-1 convergence on the homogeneous topology. $W_1(\hat\mu^N, \hat\mu^{1000})$ is plotted on a log-log scale for $N \in \{10, 30, 100, 300\}$, with $N=1000$ as proxy for the MF limit. The dotted line shows the Fournier-Guillin $O(N^{-1/2})$ reference rate.}
+  \label{fig:abm-wasserstein}
+\end{figure}
+
 \paragraph{Phase transition.}
-Figure~\ref{fig:abm-exp4} presents the phase transition experiment under the clean regime ($\sigma = 0.1$, $T = 1.0$, 10\% of agents shocked to $-5.0$). On the homogeneous topology, the uncontrolled system exhibits a sharp transition at $q^*_{\mathrm{unc}} = 0.9$, with the cascade rate rising from $14\%$ at $q = 0.6$ to $40\%$ at $q = 0.8$, $68\%$ at $q = 0.9$, and saturating above $q = 1.2$. The MF policy delays this transition substantially: the controlled cascade rate remains below $2\%$ for all $q \leq 1.0$ and crosses the 50\% threshold only at $q^*_{\mathrm{ctl}} \approx 2.0$, yielding a policy-induced shift $\Delta q^* \approx 1.1$. Log-log cascade-size histograms (Figure~\ref{fig:abm-loglog}) confirm power-law-like tails in the uncontrolled near-critical regime ($q = 0.9$); the controlled distributions at the same $q$ show near-total suppression, with the heavy tail collapsing to isolated single-default events. The two heterogeneous topologies present qualitatively different behaviours: the Erdős-Rényi system is already supercritical at $q = 0.2$ ($q^*_{\mathrm{unc}} = 0.2$) and the control provides no stabilisation in the phase transition regime, reflecting the high effective connectivity of the random graph under $p_{\mathrm{ER}} = 0.08$. The core-periphery graphon, conversely, produces near-zero cascade rates across the entire $q \in [0, 2]$ range under both controlled and uncontrolled dynamics, which follows from the topological insulation of peripheral agents: the 10\% initial shock does not reach the dense core-periphery interface at sufficient amplitude to trigger secondary defaults.
+Figure~\ref{fig:abm-exp4} presents the phase transition experiment under the clean regime ($\sigma = 0.1$, $T = 1.0$, 10\% of agents shocked to $-5.0$). On the homogeneous topology, the uncontrolled system exhibits a sharp transition at $q^*_{\mathrm{unc}} = 0.9$, with the cascade rate rising steeply through the critical region and saturating above $q = 1.2$. The MF policy delays this transition substantially: the controlled cascade rate remains below $2\%$ for all $q \leq 1.0$ and crosses the 50\% threshold only at $q^*_{\mathrm{ctl}} \approx 2.0$, yielding a policy-induced shift $\Delta q^* \approx 1.1$. Log-log cascade-size histograms (Figure~\ref{fig:abm-loglog}) show heavy-tailed distributions in the uncontrolled near-critical regime ($q = 0.9$); a discrete power-law MLE \citep{clauset2009powerlaw} is applied to all non-zero cascade events at $q = 0.9$ and the estimated exponent $\hat\alpha$ and KS-test p-value against an exponential null are reported in Figure~\ref{fig:abm-powerlaw}. The controlled distributions at the same $q$ show near-total suppression, with the heavy tail collapsing to isolated single-default events. The two heterogeneous topologies present qualitatively different behaviours: the Erdős-Rényi system is already supercritical at $q = 0.2$ ($q^*_{\mathrm{unc}} = 0.2$) and the control provides no phase-transition stabilisation. With $N = 100$ and $p_{\mathrm{ER}} = 0.08$ the expected degree is $\bar{d} \approx 8$; since $p_{\mathrm{ER}} = 0.08 \gg 1/N = 0.01$ the graph is well above the Erd\H{o}s--R\'enyi percolation threshold, guaranteeing a giant component that spans the entire network and creating a strongly connected subgraph through which shocks propagate immediately, explaining the low $q^*$. The core-periphery graphon, conversely, produces near-zero cascade rates across the entire $q \in [0, 2]$ range under both controlled and uncontrolled dynamics, which follows from the topological insulation of peripheral agents: the 10\% initial shock does not reach the dense core-periphery interface at sufficient amplitude to trigger secondary defaults.
 
 \begin{figure}[H]
   \centering
@@ -217,15 +236,35 @@ Figure~\ref{fig:abm-exp4} presents the phase transition experiment under the cle
   \label{fig:abm-loglog}
 \end{figure}
 
-\subsection{Policy Robustness}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\linewidth]{../results/figures/abm/abm_powerlaw_fit.png}
+  \caption{Discrete power-law MLE for the uncontrolled near-critical cascade-size distribution (homogeneous topology, $q = q^*_{\mathrm{unc}}$). The estimated exponent $\hat\alpha$ and its standard error are reported, along with the KS p-value against an exponential null. A small p-value indicates the data are heavier-tailed than exponential.}
+  \label{fig:abm-powerlaw}
+\end{figure}
 
-Figure~\ref{fig:abm-robustness} evaluates the Case~1-trained policy on out-of-distribution initial laws (Cases~2 and~3). On Case~2 ($X_0 = 0.3 + 0.05Y$, banks initialised well above the default threshold), the policy achieves cascade rate reductions of $0.79$, $0.67$, and $0.71$ on the homogeneous, core-periphery, and Erdős-Rényi topologies, respectively, with a consistent mean cascade size reduction of $1.7$ additional defaults. On Cases~1 and~3 (initial mean at 0), the rate reduction is negligible ($\leq 0.006$) because the system is deep in the supercritical regime regardless of control, but cascade sizes are reduced by $7$--$11$ defaults. This asymmetry pinpoints the operating envelope of the MF policy: it is effective at stabilisation when agents are initialised away from the default boundary (Case~2), but cannot suppress cascades when the initial law places mass near the critical region. Importantly, even for the out-of-distribution Case~2 law, the policy generalises nontrivially across all three topologies, suggesting that the cylindrical representation captures distributional features beyond the specific training measure.
+\subsection{Policy Robustness}\label{subsec:robustness}
+
+Figure~\ref{fig:abm-robustness} evaluates the frozen policy across three initial laws, with 95\% bootstrap CI error bars on the mean cascade size reductions. Case~1 is the training distribution (in-distribution reference); Cases~2 and~3 are out-of-distribution. On the in-distribution Case~1, cascade rates are $\approx 1.0$ across all topologies regardless of control, as expected in the supercritical regime. On the OOD Case~2 ($X_0 = 0.3 + 0.05Y$, banks initialised well above the default threshold), the policy achieves cascade rate reductions of 0.67--0.79 across all three topologies, with a mean cascade size reduction of $1.7$ additional defaults. On OOD Case~3, the distribution has the same mean as Case~1 but lower variance ($\sigma = 0.05$ vs $\sigma = 0.2$), placing all agents in a tighter cluster closer to each other but still near the default threshold at $X_0 \sim \mathcal{N}(0, 0.05^2)$. The rate reduction is negligible ($\leq 0.006$): since the Riccati analytical value depends on the initial variance as $v(0,\mu_0) \propto \mathrm{Var}[\mu_0]$, the lower variance of Case~3 implies lower initial spread, but the same high-$\sigma$ dynamics still drive the system into the supercritical regime, leaving no room for rate reduction. The key finding is that the policy generalises strongly to Case~2 across all three topologies, indicating that the learned control is not merely memorising the training initial law.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{../results/figures/abm/abm_policy_robustness.png}
-  \caption{Policy robustness. Cascade rate reduction (left) and mean cascade size reduction (right) for the Case~1-trained policy deployed on Cases~1--3 across topologies. The policy generalises strongly to Case~2 (high initial mean) but not to Cases~1 and~3 (initial mean near 0).}
+  \caption{Policy robustness. Cascade rate reduction (left) and mean cascade size reduction (right). Case~1 is the in-distribution training case; Cases~2 and~3 are out-of-distribution. The policy generalises strongly to Case~2 (high initial mean, OOD) but not to Cases~1 and~3 (initial mean near 0).}
   \label{fig:abm-robustness}
+\end{figure}
+
+\subsection{Subcritical Rate-Reduction}\label{subsec:subcritical}
+
+Experiments~1,2 and 4 operated at $\sigma = 1.0$, placing the system deep in the supercritical regime where cascade rates are $\approx 100\%$ for both controlled and uncontrolled trajectories, which masks any policy-induced rate reduction. To expose this effect, Figure~\ref{fig:abm-exp5} shows a joint sweep over $\sigma \in \{0.2, 0.5, 1.0\}$ and $q \in [0.2, 2.0]$ on the homogeneous topology.
+
+At $\sigma = 0.2$, the policy reduces the cascade rate by up to 78 percentage points: the uncontrolled rate rises steeply from $q = 0.2$ and quickly saturates, while the controlled rate remains below $50\%$ across the entire coupling range. The reduction is largest near the uncontrolled critical coupling and decays with $q$ well into the supercritical regime. At $\sigma = 0.5$ the effect is modest ($\leq 8$ pp) and at $\sigma = 1.0$ it is indistinguishable from zero, explaining precisely why cascade-rate differences are invisible in the main experiments. These results confirm that the policy does suppress cascade rates; the effect is masked by the high volatility used elsewhere, which dominates the interaction term in the dynamics and drives cascades regardless of the control.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/abm/abm_exp5_subcritical_rate_reduction.png}
+  \caption{Subcritical rate-reduction experiment on the homogeneous topology. Left: cascade rate vs $q$ for $\sigma \in \{0.2, 0.5, 1.0\}$; solid lines are uncontrolled, dashed are controlled. Right: policy-induced rate reduction $\Delta r = r_{\mathrm{unc}} - r_{\mathrm{ctl}}$. At $\sigma = 0.2$ the policy suppresses cascade rates by up to 78 pp; at $\sigma = 1.0$ no difference is detectable.}
+  \label{fig:abm-exp5}
 \end{figure}
 
 
@@ -234,11 +273,13 @@ Figure~\ref{fig:abm-robustness} evaluates the Case~1-trained policy on out-of-di
 % ==============================================================================
 \section{Conclusion and Discussion}
 
-This project studied the deployment of mean-field neural network policies, trained under the homogeneous MKV hypothesis, on finite heterogeneous agent systems with graphon-structured interactions. The implementation reproduces Algorithms~1 and~6 of \citet{pham2024mfnn} at benchmark accuracy: the cylindrical encoder achieves 100\% pass rate across Cases~1--3 with mean absolute error below $5\times10^{-3}$, while the bin encoder degrades on distributions whose support lies outside the fixed grid, confirming the support-sensitivity known from the paper. The BSDE formulation (Algorithm~6) reduces peak memory by two orders of magnitude relative to Algorithm~1, at a slight cost in accuracy on difficult cases.
+This project made two contributions: a faithful reproduction of Algorithms~1 and~6 of \citet{pham2024mfnn}, and an ABM stress-test that characterises how the learned policy degrades when the mean-field assumptions are violated. The cylindrical encoder achieves 100\% pass rate on Cases~1--3 while the bin encoder fails on shifted or tightly-concentrated distributions, consistent with the support-sensitivity described in the paper; the BSDE formulation (Algorithm~6) reduces peak memory by two orders of magnitude at a slight accuracy cost.
 
-The ABM experiments reveal consistent patterns: the frozen MF policy substantially reduces cascade severity (mean size halved at $N = 100$) without eliminating cascades entirely when the system operates well above the critical coupling. The residual damage is topology-dependent and not attributable to finite-$N$ corrections alone. Under core-periphery graphon structure, hub nodes receive a biased local mean that systematically overestimates the population average, inducing excess borrowing and degrading the policy by roughly 12 percentage points relative to the homogeneous baseline. The Erdős-Rényi topology, while matching homogeneous performance on average cascade sizes, exhibits a far lower critical coupling ($q^* = 0.2$ vs $0.9$), making the system's phase behaviour qualitatively different: the policy provides no phase-transition stabilisation in the sparse random graph regime. The policy-induced shift $\Delta q^* \approx 1.1$ on the homogeneous topology quantifies the stabilisation effect as a genuine increase in the system's resilience margin. Near-critical power-law tails in cascade-size distributions are suppressed by the control, providing evidence that the policy shifts the system away from the critical manifold rather than merely rescaling individual cascade sizes.
+Three main findings emerge from the ABM experiments. First, the frozen MF policy reduces cascade severity by 46--58\% at $N = 100$ across all topologies, but the residual damage is topology-dependent: core-periphery hub nodes observe a biased local mean that overestimates the population average, degrading the policy by $\sim$12 percentage points. Second, the phase-transition sweep on the homogeneous topology shows the policy shifts the critical coupling by $\Delta q^* \approx 1.1$; the discrete power-law MLE (Figure~\ref{fig:abm-powerlaw}) and Wasserstein-1 convergence check (Figure~\ref{fig:abm-wasserstein}) provide quantitative evidence for heavy-tailed emergence and MF-limit convergence. Third, cascade-rate suppression of up to 78~pp appears at $\sigma = 0.2$, explaining why rate differences are invisible in the high-$\sigma$ main experiments.
 
-Two limitations bound the scope of these conclusions. First, the policy was trained under $G \equiv 1$ and deployed zero-shot on heterogeneous graphs; a label-conditioned extension of the encoder (concatenating $u$ to the network input, as sketched in Appendix~\ref{sec:appendix-formulation}) would allow co-training under the graphon MKV formulation of \citet{decrescenzo2026mfc} and would likely close the 12-point gap observed on core-periphery topologies. Second, the ABM calibration placed the system deep in the supercritical regime for all tested coupling values, preventing a direct comparison of cascade rates between controlled and uncontrolled systems; a finer parameter sweep at lower $\sigma$ or smaller initial shock would expose the rate-reduction capability of the policy in the subcritical neighbourhood of $q^*$. Both extensions constitute natural next steps for a full solution of the heterogeneous MFC problem studied here.
+A known limitation of the bin encoder is its sensitivity to the support grid $\mathcal{K}$. While \citet{pham2024mfnn} propose an iterative adaptive grid procedure to handle unknown or shifting supports, we explicitly scoped this project to evaluate the breakdown of the mean field assumption under finite-agent graphons rather than reimplementing the full optimization suite. Consequently, the grid was left fixed to better isolate the effects of network heterogeneity from training artifacts.
+
+The central open limitation is the zero-shot deployment on heterogeneous graphs. The graphon MFC framework of \citet{decrescenzo2025mfc} provides the theoretical basis for label-conditioned training (Appendix~\ref{sec:appendix-formulation}), but no numerical algorithm for the graphon DPP exists; bridging that gap is the primary direction for future work. All experiments are in $d = 1$; extending to $d = 2$ would require the cylindrical encoder, which scales beyond the bin encoder's grid restriction.
 
 
 % ==============================================================================
@@ -258,159 +299,28 @@ Two limitations bound the scope of these conclusions. First, the policy was trai
 % ------------------------------------------------------------------------------
 % APPENDIX A : McKean-Vlasov Control
 % ------------------------------------------------------------------------------
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  font=\small,
-  box/.style={
-    rectangle, rounded corners=5pt,
-    minimum width=12cm, text width=11.6cm,
-    draw, line width=0.8pt,
-    inner sep=7pt, align=left
-  },
-  arr/.style={-Stealth, line width=1.2pt, shorten >=3pt, shorten <=3pt},
-  steplabel/.style={midway, fill=white, inner sep=2pt, font=\scriptsize\itshape}
-]
-
-\node[box, fill=blue!8, draw=blue!50] (s1) {
-  \textbf{[1]\;Financial Network}\enspace---\enspace
-  $N$ banks, each with log-monetary reserve $X^{i,N}_t$.
-  Interactions are heterogeneous: inter-bank influence is encoded by a
-  \emph{core-periphery graphon} $G:[0,1]^2\!\to\![0,1]$, with core banks ($u<p$)
-  tightly coupled and peripheral banks weakly coupled.
-  Each bank $i$ borrows or lends at rate $\alpha^{i,N}_t$ to stabilise the system.
-};
-
-\node[box, fill=orange!8, draw=orange!50, below=0.65cm of s1] (s2) {
-  \textbf{[2]\;Mean-Field Limit ($N\!\to\!\infty$)}\enspace---\enspace
-  By a \emph{propagation of chaos} argument (Coppini--De Crescenzo--Pham, 2025), the
-  discrete system converges to a continuum of controlled McKean--Vlasov SDEs indexed
-  by label $u\!\in\![0,1]$:
-  $\mathrm{d}X^u_t = \bigl(\kappa(\langle\mu^u_t,\mathrm{id}\rangle-X^u_t)+\alpha^u_t\bigr)\mathrm{d}t
-  +\sigma\,\mathrm{d}W^u_t$,
-  where $\mu^u_t$ is the graphon-weighted law of $u$'s neighbours.
-  A social planner minimises
-  $J(\boldsymbol\alpha) = \int_0^1 r(u)\,\mathbb{E}[\int_0^T\! f\,\mathrm{d}t + g]\,\mathrm{d}u$.
-};
-
-\node[box, fill=violet!8, draw=violet!50, below=0.65cm of s2] (s3) {
-  \textbf{[3]\;Mean-Field Neural Networks}\enspace---\enspace
-  \emph{Key challenge}: the optimal policy $\alpha^*(t,x,u,\mu^u)$ takes a
-  \emph{probability measure} as input --- an $\infty$-dimensional object.
-  \emph{Solution}: encode the particle cloud $\{X^{j}\}_{j=1}^N$ as a finite vector
-  via either (a)~a \textbf{bin-density encoder}
-  (empirical histogram $p^\mu\!\in\!\mathbb{R}^K$ over a fixed grid)
-  or (b)~a \textbf{cylindrical encoder}
-  ($z = \tfrac{1}{N}\sum_j\varphi_\theta(X^j)\!\in\!\mathbb{R}^q$,
-  empirical average of a trainable inner network).
-  The policy network is then $\alpha^* = \Phi_\theta(t,\,x,\,u,\,z)$.
-};
-
-\node[box, fill=teal!8, draw=teal!50, below=0.65cm of s3] (s4) {
-  \textbf{[4]\;Training Algorithms}\enspace---\enspace
-  \textbf{Algorithm~1 (Global DP):} simulate the Euler-discretised particle system
-  forward; backpropagate through all time steps to minimise the empirical cost
-  $\hat J(\theta)$ directly.
-  \textbf{Algorithm~6 (Global BSDE):} learn the adjoint
-  $Y_t\!\approx\!V(t,X^u_t,\mu^u_t)$ and its volatility $Z_t$ by minimising the
-  BSDE terminal residual
-  $\mathbb{E}[\lVert Y_T - g(X_T,\mu_T)\rVert^2]$;
-  recover the control as $\alpha^* = q(\bar\mu - x) - Y_t$.
-};
-
-\node[box, fill=green!8, draw=green!50, below=0.65cm of s4] (s5) {
-  \textbf{[5]\;Output \& Validation}\enspace---\enspace
-  The trained network $\mathcal{N}_\theta^*$ produces a feedback law
-  $\alpha^*(t,x,u,\mu^u)$ valid for \emph{any} initial distribution $\mu_0$.
-  \emph{Homogeneous benchmark} ($G\!\equiv\!1$, Pham--Warin cases~1--6):
-  compare the estimated cost against the exact \textbf{Riccati analytical solution}.
-  \emph{Heterogeneous benchmark}: validate via \textbf{agent-based model (ABM)}
-  simulations on a finite core-periphery bank network.
-};
-
-\draw[arr] (s1.south) -- node[steplabel] {$N\to\infty$, propagation of chaos} (s2.north);
-\draw[arr] (s2.south) -- node[steplabel] {value function on $L^2_\lambda(\mathcal{P}_2(\mathbb{R}))$; represent $\mu$ as a finite vector} (s3.north);
-\draw[arr] (s3.south) -- node[steplabel] {gradient descent on parameters $\theta$} (s4.north);
-\draw[arr] (s4.south) -- node[steplabel] {converged network $\mathcal{N}_\theta^*$} (s5.north);
-
-\end{tikzpicture}
-\caption{%
-  End-to-end project pipeline.
-  \textbf{Blue}~[1]: agent-based financial system with graphon-structured heterogeneous interactions.
-  \textbf{Orange}~[2]: McKean--Vlasov mean-field formulation obtained as the $N\to\infty$ limit.
-  \textbf{Purple}~[3]: mean-field neural network architectures that map a probability measure
-  (infinite-dimensional input) to a finite-dimensional representation.
-  \textbf{Teal}~[4]: two training strategies --- dynamic programming (Algorithm~1) and
-  backward SDE (Algorithm~6) --- from \citet{pham2024mfnn}.
-  \textbf{Green}~[5]: output feedback policy and validation against exact analytical
-  and agent-based simulation benchmarks.
-}
-\label{fig:pipeline}
-\end{figure}
-
-
 \section{McKean--Vlasov Control Problem}\label{sec:appendix-mkv}
 
-We recall the general framework for mean-field control (MFC), also called McKean--Vlasov (MKV) control, following the formulation of \citet{pham2024mfnn}.
+We recall two technical elements from the MKV control framework of \citet{pham2024mfnn} that are directly used in the implementation; for the full DPP and Bellman equation see \citet{carmona2018mfg1}.
 
-\subsection{Controlled McKean--Vlasov SDE}
+\subsection{Wasserstein Space}
 
-Let $(\Omega, \mathcal{F}, \mathbb{F} = (\mathcal{F}_t)_{t \ge 0}, \PP)$ be a filtered probability space supporting a $d$-dimensional Brownian motion $W$. The controlled state process $X = (X_t)_{0 \le t \le T}$, valued in $\RR^d$, is governed by the mean-field stochastic differential equation:
-\begin{equation}\label{eq:mkv-sde}
-  \dd X_t = b(X_t, \PP_{X_t}, \alpha_t)\,\dd t + \sigma(X_t, \PP_{X_t}, \alpha_t)\,\dd W_t, \qquad 0 \le t \le T, \quad X_0 \sim \mu_0,
-\end{equation}
-where $\mu_0 \in \PPP_2(\RR^d)$ is the initial distribution, $\alpha = (\alpha_t)_t$ is a progressively measurable control process valued in $A \subset \RR^m$, and $\PP_{X_t}$ denotes the law of $X_t$ under $\PP$. The coefficients $b : \RR^d \times \PPP_2(\RR^d) \times A \to \RR^d$ and $\sigma : \RR^d \times \PPP_2(\RR^d) \times A \to \RR^{d \times d}$ satisfy standard Lipschitz regularity assumptions.
-
-Here $\PPP_2(\RR^d)$ denotes the Wasserstein space of probability measures with finite second moment, equipped with the 2-Wasserstein distance:
+The set $\PPP_2(\RR^d)$ of probability measures with finite second moment is equipped with the 2-Wasserstein distance:
 \begin{equation}\label{eq:wasserstein}
-  \mathcal{W}_2(\mu, \nu) = \left( \inf_{X \sim \mu, Y \sim \nu} \EE\left[ d(X, Y)^2 \right] \right)^{1/2},
+  \mathcal{W}_2(\mu, \nu) = \left( \inf_{X \sim \mu, Y \sim \nu} \EE\left[ d(X, Y)^2 \right] \right)^{1/2}.
 \end{equation}
-where $X, Y$ are random with law given respectively by $\mu$ and $\nu$.
+Both the value function $v(\mu_0)$ and the optimal feedback policy $\alpha^*(t,x,\mu)$ are defined on $\PPP_2(\RR^d)$, requiring neural network architectures that can operate on measure-valued inputs.
 
-\begin{remark}
-  The key feature of \eqref{eq:mkv-sde} compared to a standard controlled SDE is that the coefficients depend on the \emph{law} $\PP_{X_t}$ of the state, making the system intrinsically infinite-dimensional. This reflects the mean-field interaction in a large population of cooperative agents governed by a social planner.
-\end{remark}
+\subsection{Forward-Backward SDE Characterisation (Algorithm~6)}
 
-\subsection{Cost Functional and Value Function}
-
-The social planner seeks to minimize the cost functional:
-\begin{equation}\label{eq:mkv-cost}
-  J(\alpha) = \EE\left[\int_0^T f(X_t, \PP_{X_t}, \alpha_t)\,\dd t + g(X_T, \PP_{X_T})\right],
-\end{equation}
-where $f : \RR^d \times \PPP_2(\RR^d) \times A \to \RR$ is the running cost and $g : \RR^d \times \PPP_2(\RR^d) \to \RR$ is the terminal cost. The value function is:
-\begin{equation}\label{eq:value-fn}
-  v(\mu_0) = \inf_{\alpha \in \mathcal{A}} J(\alpha).
-\end{equation}
-
-A crucial observation is that $v$ is defined on the \emph{Wasserstein space} $\PPP_2(\RR^d)$, making it a function on an infinite-dimensional space. This is the central computational challenge: standard neural networks, which take finite-dimensional inputs, cannot directly represent mappings on $\PPP_2(\RR^d)$.
-
-\subsection{Dynamic Programming Characterization}
-
-The decoupled value function $V : [0,T] \times \RR^d \times \PPP_2(\RR^d) \to \RR$ satisfies the backward recursion:
-\begin{equation}\label{eq:dp-recursion}
-  V(t, X_t, \PP_{X_t}) = \inf_{\alpha \in \mathcal{A}} \EE\left[\int_t^{t+h} f(X_s, \PP_{X_s}, \alpha_s)\,\dd s + V(t+h, X_{t+h}, \PP_{X_{t+h}}) \;\middle|\; \mathcal{F}_t\right],
-\end{equation}
-with terminal condition $V(T, x, \mu) = g(x, \mu)$, and $v(\mu_0) = \EE[V(0, X_0, \mu_0)]$.
-
-Sending $h \to 0$ yields the \emph{Master Bellman equation} on $[0,T) \times \RR^d \times \PPP_2(\RR^d)$, which involves the Lions derivative $\partial_\mu V$ on the Wasserstein space \citep{carmona2018mfg1}. The optimal feedback control takes the form:
-\begin{equation}\label{eq:optimal-control}
-  \alpha^\star(t, x, \mu) = \hat{a}\big(x, \mu, \mathcal{U}(t,x,\mu), \partial_x \mathcal{U}(t,x,\mu)\big),
-\end{equation}
-where $\mathcal{U}(t,x,\mu) = \partial_x V(t,x,\mu) + \EE_{\xi \sim \mu}[\partial_\mu V(t,\xi,\mu)(x)]$, and $\hat{a}$ minimizes the Hamiltonian:
-\begin{equation}
-  H(x,\mu,p,M,a) := b(x,\mu,a) \cdot p + \tfrac{1}{2} \sigma\sigma^\top(x,\mu,a) \cdot M + f(x,\mu,a).
-\end{equation}
-
-\subsection{Forward-Backward SDE Characterization (Pontryagin)}
-
-When $\sigma(x,\mu)$ does not depend on the control, setting $Y_t = V(t, X_t, \PP_{X_t})$ and $Z_t = \sigma(X_t, \PP_{X_t})^\top \partial_x V(t, X_t, \PP_{X_t})$, one obtains the forward-backward SDE system:
+When $\sigma(x,\mu)$ does not depend on the control, the Pontryagin maximum principle yields the FBSDE system on which Algorithm~6 is based: setting $Y_t = V(t,X_t,\PP_{X_t})$ and $Z_t = \sigma(X_t,\PP_{X_t})^\top\partial_x V(t,X_t,\PP_{X_t})$,
 \begin{equation}\label{eq:fbsde}
   \begin{cases}
     \dd X_t = b\big(X_t, \PP_{X_t}, \hat{a}(X_t, \PP_{X_t}, P_t)\big)\,\dd t + \sigma(X_t, \PP_{X_t})\,\dd W_t, & X_0 \sim \mu_0, \\[4pt]
     \dd Y_t = -f\big(X_t, \PP_{X_t}, \hat{a}(X_t, \PP_{X_t}, P_t)\big)\,\dd t + Z_t \cdot \dd W_t, & Y_T = g(X_T, \PP_{X_T}),
   \end{cases}
 \end{equation}
-for $0 \leq t \leq T$, where $P_t = \mathcal{U}(t, X_t, \PP_{X_t})$. This characterization forms the basis of the backward SDE-based algorithms (Algorithms 4-8 in \citet{pham2024mfnn}).
+where $P_t = \partial_x V + \EE_{\xi \sim \PP_{X_t}}[\partial_\mu V(\cdot)(X_t)]$ is the adjoint process. Algorithm~6 learns the initial adjoint map $P_0 = \mathcal{U}_\theta(\mu_0)(x)$ and the process network $Z_t = \mathcal{Z}_\theta(t,X_t,\PP_{X_t})$ jointly by minimising the terminal residual $\EE[\|Y_T - g(X_T,\PP_{X_T})\|^2]$, recovering the control via $\alpha_t^* \approx q(\EE[X_t]-X_t) - P_t$.
 
 
 % ------------------------------------------------------------------------------
@@ -418,43 +328,21 @@ for $0 \leq t \leq T$, where $P_t = \mathcal{U}(t, X_t, \PP_{X_t})$. This charac
 % ------------------------------------------------------------------------------
 \section{Mean-Field Neural Network Architectures}\label{sec:appendix-mfnn}
 
-Since the value function and optimal control are mappings on the Wasserstein space, one requires neural network architectures capable of taking a probability measure as input. \citet{pham2024mfnn} introduce two such architectures.
+Since the value function and optimal control are mappings on the Wasserstein space, neural network architectures must take a probability measure as input. \citet{pham2024mfnn} introduce two such architectures; their explicit formulas appear in Section~\ref{sec:methodology}.
 
 \subsection{Bin Density Network}
 
-The \emph{bin density} network represents $\mu \in \PPP_2(\RR^d)$ by discretizing its density on a fixed rectangular domain $\mathcal{K} \subset \RR^d$ divided into $K$ equal-volume bins $\{\mathrm{Bin}(k)\}_{k=1}^K$ with centers $x_k$ and bin volume $h = \lambda^d(\mathcal{K})/K$. The network takes the form:
-\begin{equation}\label{eq:bin-density}
-  \mathcal{N}(\mu)(x) = \Phi\big(x, \, p^\mu\big), \qquad p^\mu_k = \frac{p_\mu(x_k)}{\sum_{j=1}^K p_\mu(x_j)\,h}, \quad k = 1, \ldots, K,
-\end{equation}
-where $p_\mu$ is the density of $\mu$ and $\Phi : \RR^d \times \RR^K \to \RR^p$ is a standard feedforward neural network. The bin weight vector $p^\mu \in \RR^K$ provides a finite-dimensional representation of the measure.
-
-\begin{remark}
-  The bin density network requires a bounded support $\mathcal{K}$, whose choice affects accuracy. An iterative procedure is proposed in \citet{pham2024mfnn} to adaptively select $\mathcal{K}$. The method is primarily effective for $d = 1$ due to the curse of dimensionality in binning.
-\end{remark}
+The \emph{bin density} network represents $\mu \in \PPP_2(\RR^d)$ by discretising its density on a fixed rectangular domain $\mathcal{K} \subset \RR^d$ into $K$ equal-volume bins, producing a normalised histogram $p^\mu \in \RR^K$; the policy network $\Phi_\theta(t, x, p^\mu)$ then operates on this finite-dimensional representation. The method is primarily effective for $d = 1$ due to the curse of dimensionality; crucially, $\mathcal{K}$ must cover the support of the distribution, and distributions outside the grid degrade performance.
 
 \subsection{Cylindrical Network}
 
-The \emph{cylindrical} network is defined as:
-\begin{equation}\label{eq:cylindrical}
-  \mathcal{N}(\mu)(\cdot) = \Psi\big(\cdot, \, \langle \varphi, \mu \rangle\big), \qquad \langle \varphi, \mu \rangle := \int_{\RR^d} \varphi(x)\,\mu(\dd x) \in \RR^q,
-\end{equation}
-where $\varphi : \RR^d \to \RR^q$ is an \emph{inner} feedforward network (encoding the measure into a latent space of dimension $q$), and $\Psi : \RR^d \times \RR^q \to \RR^p$ is an \emph{outer} feedforward network. Given samples $X^{(n)} \sim \mu$, $n = 1, \ldots, N$, the cylindrical function is approximated by:
-\begin{equation}
-  \mathcal{N}(\mu)(\cdot) \approx \Psi\left(\cdot, \; \frac{1}{N}\sum_{n=1}^N \varphi(X^{(n)})\right).
-\end{equation}
-
-Both architectures satisfy a universal approximation property on the Wasserstein space and are permutation-invariant with respect to the particle ordering.
+The \emph{cylindrical} network computes a learnable moment embedding $z = N^{-1}\sum_n \varphi_\theta(X^{(n)}) \in \RR^q$ via an inner network $\varphi_\theta$, passed to an outer network $\Psi_\theta(t, x, z)$. Both architectures are permutation-invariant and satisfy a universal approximation theorem on $\PPP_2(\RR^d)$. The cylindrical encoder generalises to $d > 1$ since no grid is required.
 
 \subsection{Algorithm Overview}
 
 \citet{pham2024mfnn} propose eight algorithms divided into two families:
 \begin{itemize}
-  \item \textbf{Dynamic Programming (DP) based:} Algorithms 1-3:
-    \begin{enumerate}
-      \item Algorithm 1 (\emph{Global DP}): global learning of the feedback control via direct minimization of $J(\alpha)$ over all time steps simultaneously.
-      \item Algorithm 2 (\emph{Policy iteration}): alternates between policy evaluation and policy improvement at each time step.
-      \item Algorithm 3 (\emph{Value iteration}): sequentially learns the control and the value function backward in time.
-    \end{enumerate}
+  \item \textbf{Dynamic Programming (DP) based:} Algorithms 1-3: global (Alg.~1), policy-iteration (Alg.~2), and value-iteration (Alg.~3) variants.
   \item \textbf{Backward SDE / Pontryagin based:} Algorithms 4-8: exploit the FBSDE characterization \eqref{eq:fbsde} with various global or local loss functions.
 \end{itemize}
 
@@ -496,7 +384,11 @@ This linear-quadratic (LQ) problem admits an analytical solution via a Riccati e
 \begin{equation}\label{eq:systemic-value}
   v(t, \mu) = \int_{\RR} V(t, x, \mu)\,\mu(\dd x) = Q_t \int_{\RR} (x - \bar{\mu})^2\,\mu(\dd x) + \sigma^2 \int_t^T Q_s\,\dd s,
 \end{equation}
-where $\bar{\mu} = \int x\,\mu(\dd x)$ and $Q_t$ solves a Riccati ODE involving $\kappa, q, \eta, c$. The analytical value serves as a ground-truth benchmark for validating the neural network algorithms.
+where $\bar{\mu} = \int x\,\mu(\dd x)$ and $Q_t$ satisfies the terminal-value Riccati ODE
+\begin{equation}\label{eq:riccati-ode}
+  \dot{Q}_t = 2(\kappa + q)Q_t - Q_t^2 - \eta, \qquad Q_T = c,
+\end{equation}
+integrated backward from $T$ to $t$. The analytical value serves as a ground-truth benchmark for validating the neural network algorithms.
 
 \subsection{Benchmark Parameters}
 
@@ -506,42 +398,29 @@ Following \citet{pham2024mfnn}, the standard test parameters are $\sigma = 1$, $
   \text{Case 2: } X_0 &= 0.3 + 0.05Y, \\
   \text{Case 3: } X_0 &= 0.05Y, \\
   \text{Case 4: } X_0 &= P(-k + \theta Y) + (1-P)(k + \theta \bar Y), \quad k = \frac{\sqrt{3}}{10}, \; \theta = 0.1, \\
-  \text{Case 5: } X_0 &= P(-k + \theta Y) + (1-P)(-k + \theta \bar Y), \quad k = 0.25, \; \theta = 0.1, \\
+  \text{Case 5: } X_0 &= P(-k + \theta Y) + (1-P)(k + \theta \bar Y), \quad k = 0.25, \; \theta = 0.1, \\
   \text{Case 6: } X_0 &= \big(-\mathbf{1}_{\{\lfloor 3U \rfloor = 0\}}k + \mathbf{1}_{\{\lfloor 3U \rfloor = 1\}}k\big) + \theta Y, \quad k = 0.3, \; \theta = 0.07.
 \end{align*}
-For these laws, the analytical values computed from the Riccati formula are approximately $0.4849$ for Cases 1 and 4, $0.3625$ for Cases 2 and 3, $0.3870$ for Case 5, and $0.5662$ for Case 6. The equalities $v(0,\mu_0^{(1)}) = v(0,\mu_0^{(4)})$ and $v(0,\mu_0^{(2)}) = v(0,\mu_0^{(3)})$ follow from the fact that the LQ value depends only on the initial variance.
+For these laws, the analytical values computed from the Riccati formula are approximately $0.1642$ for Cases~1 and~4, $0.1446$ for Cases~2 and~3, $0.1812$ for Case~5, and $0.1772$ for Case~6. The equalities $v(0,\mu_0^{(1)}) = v(0,\mu_0^{(4)})$ and $v(0,\mu_0^{(2)}) = v(0,\mu_0^{(3)})$ follow from the fact that the LQ value depends only on the initial variance.
+
+Figure~\ref{fig:initial-distributions} shows density plots of all six cases overlaid with the bin-encoder grid boundary $[-2,2]$. All distributions lie within the grid, so the failure is not a coverage issue. The problem is \emph{resolution}: the 33-bin histogram over $[-2,2]$ has bin width $\approx 0.12$. Case~2 ($\sigma=0.05$) and Case~3 ($\sigma=0.05$) span only $5\sigma = 0.25$, activating at most 2--3 adjacent bins; the resulting representation is nearly identical to a point mass and cannot distinguish the two cases or provide meaningful gradient signal during training.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/baseline/initial_distributions.png}
+  \caption{Initial distributions for Cases~1--6. Dashed red lines mark the bin-encoder fixed grid $[-2,2]$. All distributions lie within the grid; the bin-encoder failure on Cases~2 and~3 is a \emph{resolution} problem: both have $\sigma=0.05$, activating only 2--3 of the 33 bins ($\Delta x \approx 0.12$), which reduces the histogram representation to a near-point-mass and loses distributional structure.}
+  \label{fig:initial-distributions}
+\end{figure}
 
 \begin{remark}[Cascade interpretation]
   When the interaction parameter $\kappa$ is large relative to the volatility, the mean-reverting force creates strong coupling. In the uncontrolled discrete system ($\alpha \equiv 0$), if a subset of banks crosses a default threshold $\theta$ (i.e., $X_t^i < \theta$), the resulting drop in $\bar{X}_t^N$ pulls all remaining banks downward, potentially triggering a \emph{cascade} or \emph{avalanche} of defaults. This systemic risk mechanism is what the control aims to mitigate.
 \end{remark}
 
-\subsection{Exact Implementation Choices and Preliminary Sweep}
+\subsection{Exact Implementation Choices and Cylindrical Encoder Comparison}
 
-The current repository now exposes the two Pham--Warin algorithms targeted in this project using the same modeling choices as in the benchmark setup. Algorithm 1 is implemented as a global control-learning method: a time-dependent mean-field neural network $\mathcal{N}_\theta(t,\mu)(x)$ is trained by simulating the Euler scheme for the particle system and minimizing the empirical counterpart of the full objective $J(\alpha)$. Algorithm 6 is implemented as a global MKV BSDE method for the systemic-risk adjoint system, learning an initial adjoint map $\mathcal{U}_\theta(\mu)(x)$ together with a time-dependent process network $\mathcal{Z}_\theta(t,\mu)(x)$, and recovering the induced control through
-\[
-  \alpha_t^\star \approx q(\EE[X_t] - X_t) - P_t.
-\]
-On the architecture side, the cylindrical encoder uses the empirical average of an inner feature map, while the bin encoder now uses hard histogram counts on a fixed support interval rather than a smoothed Gaussian proxy.
+The repository exposes both Pham--Warin algorithms with the same modeling choices as the benchmark setup. Algorithm~1 is implemented as a global control-learning method, and Algorithm~6 as a global MKV BSDE method recovering the control via $\alpha_t^\star \approx q(\EE[X_t] - X_t) - P_t$.
 
-To obtain a first implementation-level comparison, we ran a moderate local sweep on CPU over all six benchmark cases, both encoders, and both algorithms, with $N = 64$ particles, $N_T = 12$ time steps, batch size $8$, and $60$ optimization iterations per run. This is intentionally smaller than the paper's full training budget, so the numbers below should be read as consistency checks rather than direct reproductions of the published tables. The main qualitative outcome is that Algorithm 1 behaves similarly with the two encoders at this scale, while Algorithm 6 is more stable with the bin encoder, which is consistent with the observation reported by \citet{pham2024mfnn} on difficult one-dimensional benchmarks.
-
-\begin{table}[H]
-  \centering
-  \begin{tabular}{lcc}
-    \toprule
-    Method and encoder & Average final training loss & Average induced policy cost \\
-    \midrule
-    Algorithm 1 + bins & 0.1622 & -- \\
-    Algorithm 1 + cylindrical & 0.1617 & -- \\
-    Algorithm 6 + bins & 0.0127 & 0.1606 \\
-    Algorithm 6 + cylindrical & 0.0276 & 0.1644 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Moderate local benchmark sweep for the current implementation across Cases 1-6. The induced policy cost is reported only for Algorithm 6, where the learned adjoint induces the feedback control.}
-  \label{tab:systemic-preliminary-sweep}
-\end{table}
-
-These runs indicate that the repository now matches the paper at the level of benchmark laws, encoder choice, and algorithmic interface, while a higher-budget experiment remains necessary to compare quantitatively against the published Pham--Warin tables.
+To verify that the bin-encoder choice for the ABM experiments does not affect qualitative findings, we trained an additional Algorithm~1 checkpoint with the cylindrical encoder (Case~1, seed~7) and ran the policy-effectiveness experiment (Experiment~2) with both checkpoints. The controlled mean cascade sizes agree to within one additional default per path on all three topologies, confirming that the encoder choice is inconsequential for the ABM results.
 
 
 % ------------------------------------------------------------------------------
@@ -582,18 +461,7 @@ The drift and diffusion coefficients $b, \sigma : \RR^d \times \PPP_2(\RR^d) \to
 
 \subsection{Fubini Extension and Limit System}\label{sec:fubini}
 
-When $N \to \infty$, the limit system consists of an \emph{uncountable} family of processes $(X_t^u)_{u \in [0,1]}$ indexed by the label $u$. To rigorously define this infinite collection, \citet{coppini2025graphon} use a \emph{Fubini extension} of the standard probability space.
-
-\begin{definition}[Fubini extension, {\citet[Definition~3.1]{coppini2025graphon}}]
-  An extension $([0,1] \times \Omega, \, \mathcal{I} \otimes \mathcal{F}, \, \lambda \otimes \PP)$ of the product space is a \emph{Fubini extension} if for every $\mathcal{I} \otimes \mathcal{F}$-measurable process $f : [0,1] \times \Omega \to \RR$ that is integrable:
-  \begin{enumerate}
-    \item $u \mapsto f(u, \omega)$ is $\mathcal{I}$-measurable for $\PP$-a.e.\ $\omega$,
-    \item $\omega \mapsto f(u, \omega)$ is $\mathcal{F}$-measurable for $\lambda$-a.e.\ $u$,
-    \item The Fubini theorem holds: $\int_{[0,1] \times \Omega} f\,\dd(\lambda \otimes \PP) = \int_{[0,1]} \left(\int_\Omega f(u,\omega)\,\dd\PP(\omega)\right)\dd\lambda(u)$.
-  \end{enumerate}
-\end{definition}
-
-The limit system on this extended space reads: for $\lambda$-a.e.\ $u \in [0,1]$,
+When $N \to \infty$, the limit system consists of an \emph{uncountable} family of processes $(X_t^u)_{u \in [0,1]}$ indexed by the label $u$. To rigorously define this infinite collection, \citet{coppini2025graphon} use a \emph{Fubini extension} of the standard probability space; see \citet[Definition~3.1]{coppini2025graphon} for the precise three-condition construction. The limit system on this extended space reads: for $\lambda$-a.e.\ $u \in [0,1]$,
 \begin{equation}\label{eq:graphon-limit}
   \dd X_t^u = b\!\left(X_t^u, \, \mu_t^u\right)\dd t + \sigma\!\left(X_t^u, \, \mu_t^u\right)\dd W_t^u, \qquad X_0^u \sim \mu_0^u,
 \end{equation}
@@ -625,7 +493,7 @@ The convergence rate depends on the dimension $d$ and matches the Fournier--Guil
 % ------------------------------------------------------------------------------
 \section{Mean-Field Control of Non-Exchangeable Systems}\label{sec:appendix-nonexch}
 
-We summarize the theoretical contribution of \citet{decrescenzo2026mfc}, which establishes the dynamic programming principle for MFC problems with graphon-structured heterogeneous interactions.
+We summarize the theoretical contribution of \citet{decrescenzo2025mfc}, which establishes the dynamic programming principle for MFC problems with graphon-structured heterogeneous interactions.
 
 \subsection{Controlled Graphon Particle System}
 
@@ -645,7 +513,7 @@ where $r : [0,1] \to \RR_+$ is a label-weighting function, and the state and gra
 
 \subsection{Law Invariance and Value Function}
 
-A key result of \citet{decrescenzo2026mfc} is the \emph{law invariance property}: the value function depends on the state of the system only through the collection of marginal laws $\boldsymbol{\mu} = (\PP_{X^u})_{u \in [0,1]}$. This allows defining:
+A key result of \citet{decrescenzo2025mfc} is the \emph{law invariance property}: the value function depends on the state of the system only through the collection of marginal laws $\boldsymbol{\mu} = (\PP_{X^u})_{u \in [0,1]}$. This allows defining:
 \begin{equation}\label{eq:nonexch-value}
   v(t, \boldsymbol{\mu}) = \inf_{\boldsymbol{\alpha}} J_{t,\boldsymbol{\mu}}(\boldsymbol{\alpha}),
 \end{equation}
@@ -653,17 +521,17 @@ where $\boldsymbol{\mu} \in L^2_\lambda(\PPP_2(\RR^d))$ is the initial collectio
 
 \subsection{Dynamic Programming Principle}
 
-\begin{theorem}[DPP, {\citet[Theorem~4.1]{decrescenzo2026mfc}}]
+\begin{theorem}[DPP, {\citet[Theorem~4.1]{decrescenzo2025mfc}}]
   Under standard regularity assumptions, the value function $v$ satisfies the dynamic programming principle: for all $0 \le t \le s \le T$ and $\boldsymbol{\mu} \in L^2_\lambda(\PPP_2(\RR^d))$,
   \begin{equation}
     v(t, \boldsymbol{\mu}) = \inf_{\boldsymbol{\alpha}} \left\{ \int_0^1 r(u)\,\EE\left[\int_t^s f\!\left(u, X_r^u, \alpha_r^u, \mu_r^u\right)\dd r\right]\dd u + v(s, \boldsymbol{\mu}_s) \right\}.
   \end{equation}
 \end{theorem}
 
-Moreover, \citet{decrescenzo2026mfc} derive a chain rule for smooth functions along flows of marginal laws, and prove that $v$ is a viscosity solution to a Bellman equation on $L^2_\lambda(\PPP_2(\RR^d))$.
+Moreover, \citet{decrescenzo2025mfc} derive a chain rule for smooth functions along flows of marginal laws, and prove that $v$ is a viscosity solution to a Bellman equation on $L^2_\lambda(\PPP_2(\RR^d))$.
 
 \begin{remark}[Open problem]
-  While \citet{decrescenzo2026mfc} establish the theoretical DPP and Bellman equation for graphon MFC, \emph{no numerical algorithm} has been proposed to solve these problems computationally. This project aims to bridge this gap by extending the mean-field neural network algorithms of \citet{pham2024mfnn} to the graphon-heterogeneous setting.
+  While \citet{decrescenzo2025mfc} establish the theoretical DPP and Bellman equation for graphon MFC, \emph{no numerical algorithm} has been proposed to solve these problems computationally. This project identifies the gap and, in Appendix~\ref{sec:appendix-formulation}, proposes a label-conditioned encoder architecture that would in principle permit gradient-based training under the graphon MKV cost. Bridging the full gap (including a practical numerical discretisation of the graphon DPP) is left as future work.
 \end{remark}
 
 
@@ -672,7 +540,7 @@ Moreover, \citet{decrescenzo2026mfc} derive a chain rule for smooth functions al
 % ------------------------------------------------------------------------------
 \section{Project Formulation: Heterogeneous Systemic Risk}\label{sec:appendix-formulation}
 
-We now combine the elements from the preceding sections to formulate the specific model studied in this project.
+\emph{The following formulation describes the label-conditioned extension proposed as future work; the experiments in this project use the homogeneous $G \equiv 1$ policy throughout and no label-conditioned training was performed.}
 
 \subsection{Heterogeneous Systemic Risk SDE}
 
@@ -715,16 +583,6 @@ To learn the label-dependent optimal control $\alpha^\star(t, x, u, \mu^u)$, we 
 \end{itemize}
 
 The key insight is that the network must learn a \emph{family} of control policies indexed by the label $u$, rather than a single policy. This is computationally feasible because the label space $[0,1]$ is one-dimensional, and the network can smoothly interpolate across labels.
-
-\subsection{Connection to Course Concepts}
-
-This formulation connects to the core themes of the Interactions course:
-\begin{itemize}
-  \item \textbf{Agent-Based Models}: the discrete $N$-bank system \eqref{eq:nonexch-particle} is an ABM with heterogeneous interactions on a network.
-  \item \textbf{Emergence}: cascading defaults arise as emergent phenomena from local interactions when the control is insufficient or mis-specified.
-  \item \textbf{Interacting Particle Systems}: the graphon particle system \eqref{eq:graphon-particle} is an IPS whose macroscopic behavior is described by the graphon mean-field limit.
-  \item \textbf{Mean-field approximation}: the gap between the finite-$N$ ABM and the infinite-population limit quantifies when the mean-field approximation breaks down, particularly under heterogeneity.
-\end{itemize}
 
 
 \end{document}

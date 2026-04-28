@@ -13,7 +13,7 @@ CASE_SPECS: dict[str, tuple[str, tuple[float, ...]]] = {
     "case_2": ("normal", (0.3, 0.05)),
     "case_3": ("normal", (0.0, 0.05)),
     "case_4": ("two_point_mixture", (-3.0**0.5 / 10.0, 3.0**0.5 / 10.0, 0.1)),
-    "case_5": ("two_point_mixture", (-0.25, -0.25, 0.1)),
+    "case_5": ("two_point_mixture", (-0.25, 0.25, 0.1)),
     "case_6": ("three_point_mixture", (-0.3, 0.3, 0.07)),
 }
 
@@ -22,7 +22,7 @@ CASE_SPECS_2D: dict = {
     "case_2": ("two_point_mixture_2d", ((0.0, 0.0), (0.5, 0.5), 0.15)),
     "case_3": ("three_point_mixture_2d_weighted", ((-0.05, -0.05), (0.0, 0.0), (0.5, 0.5), 0.05, (0.4, 0.4, 0.2))),
     "case_4": ("two_point_mixture_2d", ((-3.0**0.5 / 10.0, -3.0**0.5 / 10.0), (3.0**0.5 / 10.0, 3.0**0.5 / 10.0), 0.1)),
-    "case_5": ("two_point_mixture_2d", ((-0.25, -0.25), (-0.25, -0.25), 0.1)),
+    "case_5": ("two_point_mixture_2d", ((-0.25, -0.25), (0.25, 0.25), 0.1)),
     "case_6": ("three_point_mixture_2d", ((-0.3, -0.3), (0.3, 0.3), 0.07)),
 }
 

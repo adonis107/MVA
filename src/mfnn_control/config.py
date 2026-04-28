@@ -50,7 +50,7 @@ class PhamWarinBenchmarkProfile:
     cases: tuple[str, ...] = ("case_1", "case_2", "case_3", "case_4", "case_5", "case_6")
     encoders: tuple[str, ...] = ("bins", "cylindrical")
     algorithms: tuple[str, ...] = ("global_dp", "global_bsde")
-    seeds: tuple[int, ...] = (7, 13, 21)
+    seeds: tuple[int, ...] = (7, 9, 11, 13, 21)
     particles: int = 256
     steps: int = 20
     iterations: int = 400
