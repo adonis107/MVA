@@ -16,6 +16,8 @@ from .systemic_risk import (
     systemic_risk_adjoint_drift,
     systemic_risk_adjoint_terminal,
     systemic_risk_bsde_driver,
+    systemic_risk_running_cost,
+    systemic_risk_terminal_cost,
 )
 
 
@@ -59,6 +61,7 @@ def run_training_step(
     optimizer.zero_grad(set_to_none=True)
     loss = policy_loss(policy, initial_states, config)
     loss.backward()
+    torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
     optimizer.step()
     return float(loss.detach().cpu())
 
@@ -130,6 +133,8 @@ def run_global_bsde_step(
     optimizer.zero_grad(set_to_none=True)
     loss = global_bsde_loss(initial_value_network, process_network, initial_states, config)
     loss.backward()
+    all_params = list(initial_value_network.parameters()) + list(process_network.parameters())
+    torch.nn.utils.clip_grad_norm_(all_params, max_norm=1.0)
     optimizer.step()
     return float(loss.detach().cpu())
 
@@ -159,18 +164,48 @@ def evaluate_global_bsde_policy(
     initial_states: Tensor,
     config: SystemicRiskConfig,
 ) -> Tensor:
-    initial_value_network, _ = networks
-
-    class InducedPolicy(torch.nn.Module):
-        def forward(self, time: Tensor | float, states: Tensor):
-            del time
-            adjoint = initial_value_network(states)
-            return type(
-                "PolicyOutputLike",
-                (),
-                {"actions": adjoint_induced_control(states, adjoint, config)},
-            )()
-
-    policy = InducedPolicy()
-    simulation = simulate_systemic_risk(policy, initial_states, config)
-    return config.dt * simulation.running_costs.sum(dim=-1).mean(dim=(1, 2)).sum() + simulation.terminal_cost.sum(dim=-1).mean()
+    initial_value_network, process_network = networks
+    dt = config.dt
+    sqrt_dt = dt ** 0.5
+    current_states = initial_states
+    current_adjoint = initial_value_network(initial_states)
+    noise = torch.randn(
+        config.steps,
+        *initial_states.shape,
+        device=initial_states.device,
+        dtype=initial_states.dtype,
+    )
+    running_cost_sum = torch.zeros(
+        initial_states.shape[0],
+        device=initial_states.device,
+        dtype=initial_states.dtype,
+    )
+    for step in range(config.steps):
+        time = torch.full(
+            (initial_states.shape[0],),
+            fill_value=step * dt,
+            device=initial_states.device,
+            dtype=initial_states.dtype,
+        )
+        action = adjoint_induced_control(current_states, current_adjoint, config)
+        running_cost_sum = running_cost_sum + dt * systemic_risk_running_cost(
+            current_states, action, config
+        ).mean(dim=(1, 2))
+        z_value = process_network(time, current_states)
+        # Forward state: dX = (kappa*(mean-X) + alpha) dt + sigma dW
+        mean_state = current_states.mean(dim=1, keepdim=True)
+        next_states = (
+            current_states
+            + dt * (config.kappa * (mean_state - current_states) + action)
+            + config.sigma * sqrt_dt * noise[step]
+        )
+        # Backward adjoint: dY = -f dt + Z dW  (BSDE step, same noise)
+        next_adjoint = (
+            current_adjoint
+            + dt * systemic_risk_bsde_driver(current_states, current_adjoint, config)
+            + z_value * noise[step]
+        )
+        current_states = next_states
+        current_adjoint = next_adjoint
+    terminal = systemic_risk_terminal_cost(current_states, config).mean(dim=(1, 2))
+    return (running_cost_sum + terminal).mean()

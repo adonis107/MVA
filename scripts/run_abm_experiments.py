@@ -75,49 +75,88 @@ def add_cascade_ci(stats_dict: dict, n_boot: int = 1000, seed: int = 0) -> dict:
     return stats_dict
 
 
-# ---------------------------------------------------------------------------
-# Power-law MLE
-# ---------------------------------------------------------------------------
-
-def fit_discrete_powerlaw_mle(
+def fit_cascade_tail_gof(
     sizes: list[float],
-    x_min: int = 1,
-) -> dict[str, float | int]:
-    """MLE for discrete power law P(X=k) ~ k^{-alpha}, k >= x_min.
+    x_min: float = 1.0,
+) -> dict[str, object]:
+    """Fit exponential, log-normal, and Pareto (power-law) distributions to
+    cascade sizes >= x_min and compare via AIC.
 
-    Uses the Clauset, Shalizi, Newman (2009) formula for discrete distributions
-    (Eq. B.4). Also performs a KS test against an exponential null.
+    Returns MLE parameters, log-likelihoods, AIC, and KS p-values for each
+    candidate distribution, plus the AIC-preferred model name.
     """
-    from scipy.stats import kstest
+    from scipy.stats import expon, lognorm, pareto, kstest
 
     data = np.asarray([s for s in sizes if s >= x_min], dtype=float)
     n = len(data)
     if n < 5:
-        return {"alpha": float("nan"), "se": float("nan"), "n": n, "x_min": x_min,
-                "ks_stat": float("nan"), "ks_p": float("nan"), "exp_lambda": float("nan")}
-    # Clauset et al. (2009) discrete MLE
-    alpha_hat = 1.0 + n / float(np.sum(np.log(data / (x_min - 0.5))))
-    se = (alpha_hat - 1.0) / (n ** 0.5)
-    # KS test: compare empirical data to exponential distribution with MLE lambda
-    lam_hat = 1.0 / float(data.mean() - x_min + 1)
-    ks_stat, ks_p = kstest(
-        data - x_min,
-        lambda x: 1.0 - np.exp(-lam_hat * x),
-    )
-    return {
-        "alpha": float(alpha_hat),
-        "se": float(se),
-        "n": int(n),
-        "x_min": int(x_min),
-        "ks_stat": float(ks_stat),
-        "ks_p": float(ks_p),
-        "exp_lambda": float(lam_hat),
+        return {"n": n, "x_min": x_min, "best_model": "insufficient_data"}
+
+    results: dict[str, object] = {"n": int(n), "x_min": float(x_min)}
+
+    # Exponential
+    shifted = data - x_min
+    lam_hat = 1.0 / float(shifted.mean()) if shifted.mean() > 0 else 1e-9
+    ll_exp = float(np.sum(np.log(lam_hat) - lam_hat * shifted))
+    aic_exp = 2.0 * 1 - 2.0 * ll_exp
+    ks_exp, ks_p_exp = kstest(shifted, lambda x: 1.0 - np.exp(-lam_hat * x))
+    results["exponential"] = {
+        "lambda": float(lam_hat),
+        "log_likelihood": ll_exp,
+        "aic": float(aic_exp),
+        "ks_stat": float(ks_exp),
+        "ks_p": float(ks_p_exp),
     }
+
+    # Log-normal
+    log_data = np.log(data)
+    mu_ln = float(log_data.mean())
+    sigma_ln = float(log_data.std(ddof=1)) if n > 1 else 1e-9
+    if sigma_ln < 1e-9:
+        sigma_ln = 1e-9
+    ll_ln = float(np.sum(-np.log(data) - np.log(sigma_ln) - 0.5 * ((log_data - mu_ln) / sigma_ln) ** 2))
+    aic_ln = 2.0 * 2 - 2.0 * ll_ln
+    ks_ln, ks_p_ln = kstest(data, lambda x: lognorm.cdf(x, s=sigma_ln, scale=np.exp(mu_ln)))
+    results["lognormal"] = {
+        "mu": float(mu_ln),
+        "sigma": float(sigma_ln),
+        "log_likelihood": ll_ln,
+        "aic": float(aic_ln),
+        "ks_stat": float(ks_ln),
+        "ks_p": float(ks_p_ln),
+    }
+
+    # Pareto / power-law
+    alpha_pareto = float(n / np.sum(np.log(data / x_min)))
+    ll_pareto = float(n * np.log(alpha_pareto) - n * np.log(x_min)
+                      - (alpha_pareto + 1.0) * np.sum(np.log(data / x_min)))
+    aic_pareto = 2.0 * 1 - 2.0 * ll_pareto
+    ks_pa, ks_p_pa = kstest(data, lambda x: pareto.cdf(x, b=alpha_pareto, scale=x_min))
+    results["pareto"] = {
+        "alpha": float(alpha_pareto),
+        "log_likelihood": ll_pareto,
+        "aic": float(aic_pareto),
+        "ks_stat": float(ks_pa),
+        "ks_p": float(ks_p_pa),
+    }
+
+    # AIC-preferred model
+    model_aics = {
+        "exponential": float(aic_exp),
+        "lognormal": float(aic_ln),
+        "pareto": float(aic_pareto),
+    }
+    best = min(model_aics, key=lambda k: model_aics[k])
+    delta = {k: float(v - model_aics[best]) for k, v in model_aics.items()}
+    results["model_aic"] = model_aics
+    results["delta_aic"] = delta
+    results["best_model"] = best
+    return results
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", default="results/checkpoints/systemic_risk_global_dp_bins_case_1_seed7.pt")
+    parser.add_argument("--checkpoint", default="results/checkpoints/systemic_risk_global_dp_cylindrical_case_1_seed7.pt")
     parser.add_argument("--output-dir", default="results/abm")
     parser.add_argument("--case", default="case_1")
     parser.add_argument("--device", default="cpu")
@@ -140,13 +179,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--phase-q-min", type=float, default=0.0)
     parser.add_argument("--phase-q-max", type=float, default=2.0)
     parser.add_argument("--phase-q-steps", type=int, default=21)
-    parser.add_argument("--phase-sigma", type=float, default=1.0)
-    parser.add_argument("--phase-threshold", type=float, default=0.0)
-    parser.add_argument("--phase-initial-mean", type=float, default=0.5)
-    parser.add_argument("--phase-horizon", type=float, default=0.2)
-    parser.add_argument("--phase-steps", type=int, default=20)
-    parser.add_argument("--phase-stress-fraction", type=float, default=0.1)
-    parser.add_argument("--phase-stress-value", type=float, default=-5.0)
     parser.add_argument("--subcrit-sigmas", default="0.2,0.5,1.0")
     parser.add_argument("--subcrit-q-min", type=float, default=0.2)
     parser.add_argument("--subcrit-q-max", type=float, default=2.0)
@@ -496,48 +528,43 @@ def experiment_4_phase_transition(
     device: str,
     policy: torch.nn.Module,
     topologies: dict[str, torch.Tensor],
-    phase_sigma: float = 1.0,
-    phase_threshold: float = 0.0,
-    phase_initial_mean: float = 0.5,
-    phase_horizon: float = 0.2,
-    phase_steps: int = 20,
-    phase_stress_fraction: float = 0.1,
-    phase_stress_value: float = -5.0,
 ) -> dict[str, object]:
-    n_stressed = max(1, int(agents * phase_stress_fraction))
-    n_healthy = agents - n_stressed
     results_by_topology: dict[str, object] = {}
     for topo_name, weights in topologies.items():
         uncontrolled = []
         controlled = []
+        hub = highest_degree_node(weights)
         for q in q_sweep:
             cfg = ABMConfig(
-                horizon=phase_horizon,
-                steps=phase_steps,
-                sigma=phase_sigma,
+                horizon=base_config.horizon,
+                steps=base_config.steps,
+                sigma=base_config.sigma,
                 interaction_q=q,
                 state_dim=state_dim,
-                default_threshold=phase_threshold,
+                default_threshold=base_config.default_threshold,
             )
-            healthy = torch.randn(mc_paths, n_healthy, state_dim, device=device) * 0.05 + phase_initial_mean
-            stressed = torch.randn(mc_paths, n_stressed, state_dim, device=device) * 0.05 + phase_stress_value
-            x0 = torch.cat([healthy, stressed], dim=1)
+            x0 = sample_initial(case, mc_paths, agents, state_dim, device)
+            x0 = apply_initial_shock(x0, [hub], cfg.default_threshold - 0.2)
             initial_defaulted = (x0 < cfg.default_threshold).any(dim=-1)
             sim_unc = rollout_abm(x0, cfg, weights, policy=None)
             sim_ctl = rollout_abm(x0, cfg, weights, policy=policy)
             unc_add = (sim_unc.defaulted.float().sum(dim=1) - initial_defaulted.float().sum(dim=1)).clamp_min(0.0)
             ctl_add = (sim_ctl.defaulted.float().sum(dim=1) - initial_defaulted.float().sum(dim=1)).clamp_min(0.0)
+            unc_dist = [float(v) for v in unc_add.cpu().tolist()]
+            ctl_dist = [float(v) for v in ctl_add.cpu().tolist()]
             uncontrolled.append({
                 "q": float(q),
                 "cascade_rate": float((unc_add > 0).float().mean().item()),
                 "mean_cascade_size": float(unc_add.mean().item()),
-                "cascade_size_distribution": [float(v) for v in unc_add.cpu().tolist()],
+                "cascade_size_distribution": unc_dist,
+                "tail_gof": fit_cascade_tail_gof(unc_dist),
             })
             controlled.append({
                 "q": float(q),
                 "cascade_rate": float((ctl_add > 0).float().mean().item()),
                 "mean_cascade_size": float(ctl_add.mean().item()),
-                "cascade_size_distribution": [float(v) for v in ctl_add.cpu().tolist()],
+                "cascade_size_distribution": ctl_dist,
+                "tail_gof": fit_cascade_tail_gof(ctl_dist),
             })
         unc_rates = [row["cascade_rate"] for row in uncontrolled]
         ctl_rates = [row["cascade_rate"] for row in controlled]
@@ -746,13 +773,6 @@ def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
         device,
         policy,
         topologies,
-        phase_sigma=args.phase_sigma,
-        phase_threshold=args.phase_threshold,
-        phase_initial_mean=args.phase_initial_mean,
-        phase_horizon=args.phase_horizon,
-        phase_steps=args.phase_steps,
-        phase_stress_fraction=args.phase_stress_fraction,
-        phase_stress_value=args.phase_stress_value,
     )
     subcrit_q_sweep = torch.linspace(args.subcrit_q_min, args.subcrit_q_max, args.subcrit_q_steps).tolist()
     exp5 = experiment_5_subcritical_rate_comparison(
