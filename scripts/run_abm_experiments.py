@@ -21,6 +21,7 @@ from mfnn_control import (
     EncoderConfig,
     TrainingConfig,
     apply_initial_shock,
+    build_global_bsde_networks,
     build_policy,
     core_periphery_graph_weights,
     default_mask,
@@ -156,7 +157,7 @@ def fit_cascade_tail_gof(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", default="results/checkpoints/systemic_risk_global_dp_cylindrical_case_1_seed7.pt")
+    parser.add_argument("--checkpoint", default="results/checkpoints/systemic_risk_global_bsde_cylindrical_case_1_seed7.pt")
     parser.add_argument("--output-dir", default="results/abm")
     parser.add_argument("--case", default="case_1")
     parser.add_argument("--device", default="cpu")
@@ -208,16 +209,56 @@ def highest_degree_node(weights: torch.Tensor) -> int:
     return int(torch.argmax(degrees).item())
 
 
+class _BSDENetworkWrapper(torch.nn.Module):
+    """Exposes a network(inputs) interface over a MeanFieldInitialValue network.
+
+    inputs shape: (B, N, 1 + state_dim + feature_dim)  — same format produced by
+    policy_actions_from_local_measures.  We ignore the pre-computed local features
+    and instead let the initial-value network recompute global mean-field features
+    from the raw states, then return the adjoint-induced control.
+    """
+
+    def __init__(self, initial_value_network: torch.nn.Module, q: float) -> None:
+        super().__init__()
+        self.initial_value_network = initial_value_network
+        self.q = q
+        self.state_dim: int = getattr(initial_value_network, "state_dim", 1)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        states = inputs[..., 1 : 1 + self.state_dim]
+        adjoint = self.initial_value_network(states)
+        mean_state = states.mean(dim=1, keepdim=True)
+        return self.q * (mean_state - states) - adjoint
+
+
+class _BSDEPolicyWrapper(torch.nn.Module):
+    """Wraps BSDE networks to expose the encoder/network interface expected by
+    policy_actions_from_local_measures and CentralityHeuristicPolicy.
+    """
+
+    def __init__(self, initial_value_network: torch.nn.Module, q: float) -> None:
+        super().__init__()
+        self.encoder = initial_value_network.encoder
+        self.network = _BSDENetworkWrapper(initial_value_network, q)
+
+
 def load_policy_from_checkpoint(checkpoint_path: Path, device: str) -> torch.nn.Module:
     payload = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    if "policy_state_dict" not in payload:
-        raise ValueError("Checkpoint does not contain policy_state_dict")
     encoder_config = EncoderConfig(**payload["encoder_config"])
     training_config = TrainingConfig(**payload["training_config"])
-    policy = build_policy(encoder_config, training_config).to(device=device, dtype=torch.float32)
-    policy.load_state_dict(payload["policy_state_dict"])
-    policy.eval()
-    return policy
+    if "policy_state_dict" in payload:
+        policy = build_policy(encoder_config, training_config).to(device=device, dtype=torch.float32)
+        policy.load_state_dict(payload["policy_state_dict"])
+        policy.eval()
+        return policy
+    if "initial_value_state_dict" in payload:
+        initial_value_network, _ = build_global_bsde_networks(encoder_config, training_config)
+        initial_value_network = initial_value_network.to(device=device, dtype=torch.float32)
+        initial_value_network.load_state_dict(payload["initial_value_state_dict"])
+        initial_value_network.eval()
+        q = float(payload["config"]["q"])
+        return _BSDEPolicyWrapper(initial_value_network, q)
+    raise ValueError("Checkpoint contains neither policy_state_dict nor initial_value_state_dict")
 
 
 def default_times(states: torch.Tensor, threshold: float, initial_defaulted: torch.Tensor) -> torch.Tensor:
@@ -702,7 +743,7 @@ def run_all_experiments(args: argparse.Namespace) -> dict[str, object]:
         raise FileNotFoundError(
             f"Checkpoint not found: {checkpoint_path}\n"
             "Train a model first by running:\n"
-            "  python scripts/train_systemic_risk_baseline.py --algorithm global_dp --save-dir results/checkpoints"
+            "  python scripts/train_systemic_risk_baseline.py --algorithm global_bsde --save-dir results/checkpoints"
         )
     policy = load_policy_from_checkpoint(checkpoint_path, device)
     topologies = build_topologies(args.agents, args.core_hubs, args.er_p, device)

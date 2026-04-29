@@ -190,7 +190,7 @@ def evaluate_global_bsde_policy(
         action = adjoint_induced_control(current_states, current_adjoint, config)
         running_cost_sum = running_cost_sum + dt * systemic_risk_running_cost(
             current_states, action, config
-        ).mean(dim=(1, 2))
+        ).sum(dim=-1).mean(dim=1)
         z_value = process_network(time, current_states)
         # Forward state: dX = (kappa*(mean-X) + alpha) dt + sigma dW
         mean_state = current_states.mean(dim=1, keepdim=True)
@@ -207,5 +207,5 @@ def evaluate_global_bsde_policy(
         )
         current_states = next_states
         current_adjoint = next_adjoint
-    terminal = systemic_risk_terminal_cost(current_states, config).mean(dim=(1, 2))
+    terminal = systemic_risk_terminal_cost(current_states, config).sum(dim=-1).mean(dim=1)
     return (running_cost_sum + terminal).mean()
